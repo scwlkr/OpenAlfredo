@@ -10,7 +10,9 @@
   },
   "dependencies": {
     "@ai-sdk/react": "^3.0.148",
-    "@prisma/client": "^7.6.0",
+    "@libsql/client": "^0.17.2",
+    "@prisma/adapter-libsql": "^7.6.0",
+    "@prisma/client": "^5.20.0",
     "ai": "^6.0.146",
     "lucide-react": "^1.7.0",
     "next": "14.2.35",
@@ -18,7 +20,7 @@
     "node-telegram-bot-api": "^0.67.0",
     "ollama": "^0.6.3",
     "ollama-ai-provider": "^1.2.0",
-    "prisma": "^7.6.0",
+    "prisma": "^5.20.0",
     "react": "^18",
     "react-dom": "^18"
   },

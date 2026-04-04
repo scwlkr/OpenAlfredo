@@ -1,9 +1,7 @@
 import fs from 'fs';
 import path from 'path';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from './db';
 import { logInfo, logError } from './logger';
-
-const prisma = new PrismaClient();
 
 const ROOT_DIR = process.cwd();
 const AGENTS_DIR = path.join(ROOT_DIR, 'data', 'agents');
