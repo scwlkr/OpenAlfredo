@@ -1,0 +1,28 @@
+{
+  "name": "deathofprompt",
+  "version": "1.0.0",
+  "description": "_Hello, this is Death of Prompt._",
+  "main": "index.js",
+  "bin": {
+    "dop": "./bin/dop.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/scwlkr/DeathOfPrompt.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/scwlkr/DeathOfPrompt/issues"
+  },
+  "homepage": "https://github.com/scwlkr/DeathOfPrompt#readme",
+  "dependencies": {
+    "open": "^11.0.0",
+    "yargs": "^18.0.0"
+  }
+}
