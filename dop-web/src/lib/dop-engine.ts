@@ -1,7 +1,7 @@
 import { prisma } from './db';
 import { retrieveContext } from './memory-retrieval';
 import { streamText, generateText } from 'ai';
-import { createOllama } from 'ollama-ai-provider';
+import { createOllama } from 'ai-sdk-ollama';
 const ollama = createOllama();
 
 export async function processChat(sessionId: string, userMessage: string, model: string = 'llama3') {

@@ -1,0 +1,2 @@
+{"timestamp":"2026-04-04T20:55:16.129Z","level":"INFO","event":"context_retrieved","data":{"sessionId":"TEST1234","query":"hello","sliceCount":2}}
+{"timestamp":"2026-04-04T21:02:24.551Z","level":"INFO","event":"context_retrieved","data":{"sessionId":"497643d7-a5f2-4359-b04e-112ff2236c26","query":"hello","sliceCount":2}}

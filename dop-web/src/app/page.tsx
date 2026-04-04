@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
 import { Send, Bot, User, Settings, FileText, Terminal, X } from 'lucide-react';
@@ -13,6 +13,11 @@ export default function Home() {
   const [sessionId, setSessionId] = useState<string>('');
   const [model, setModel] = useState('llama3');
   const [availableModels, setAvailableModels] = useState<string[]>([]);
+
+  const sessionRef = useRef({ sessionId: '', model: 'llama3' });
+  useEffect(() => {
+    sessionRef.current = { sessionId, model };
+  }, [sessionId, model]);
 
   useEffect(() => {
     fetch('/api/models')
@@ -43,10 +48,7 @@ export default function Home() {
   const { messages, sendMessage, status } = useChat({
     transport: new DefaultChatTransport({
       api: '/api/chat',
-      body: {
-        sessionId,
-        model
-      }
+      body: () => sessionRef.current
     })
   });
 
@@ -237,6 +239,32 @@ export default function Home() {
           </form>
         </div>
       </section>
+
+      {showLogs && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-6 z-50">
+          <div className="bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-4xl h-[80vh] flex flex-col overflow-hidden">
+            <div className="p-4 border-b border-gray-800 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Terminal className="w-5 h-5 text-gray-400" />
+                <h2 className="font-semibold text-white">System Logs</h2>
+              </div>
+              <button onClick={() => setShowLogs(false)} className="text-gray-400 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 font-mono text-sm space-y-2">
+              {logs.map((log, i) => (
+                <div key={i} className={`p-2 rounded ${log.level === 'ERROR' ? 'bg-red-900/20 text-red-400' : 'text-gray-300'}`}>
+                  <span className="text-gray-500">[{new Date(log.timestamp).toLocaleTimeString()}]</span>{' '}
+                  <span className={`font-bold ${log.level === 'ERROR' ? 'text-red-500' : 'text-blue-400'}`}>{log.event}</span>{' '}
+                  <span className="text-gray-400">{JSON.stringify(log.data)}</span>
+                </div>
+              ))}
+              {logs.length === 0 && <div className="text-gray-500 text-center py-8">No logs available for today</div>}
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
