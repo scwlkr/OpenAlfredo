@@ -4,7 +4,6 @@ import { NextResponse } from 'next/server';
 export async function POST(request: Request) {
   try {
     const payload = await request.json();
-    console.log("PAYLOAD RECEIVED:", JSON.stringify(payload, null, 2));
     const { messages, sessionId, model } = payload;
     
     // In some versions of useChat with custom body, messages might not be inside an array or might have different shapes
@@ -18,7 +17,6 @@ export async function POST(request: Request) {
     }
 
     if (!message || !sessionId) {
-      console.error("Missing requirements check failed. Message:", message, "SessionId:", sessionId);
       return NextResponse.json(
         { error: 'Missing requirements', code: 'CHAT_MISSING_FIELDS' },
         { status: 400 }
@@ -29,7 +27,7 @@ export async function POST(request: Request) {
   } catch (err: any) {
     console.error("Chat API Error:", err);
     return NextResponse.json(
-      { error: err.message || 'Internal server error', code: 'CHAT_FAILED' },
+      { error: 'Internal server error', code: 'CHAT_FAILED' },
       { status: 500 }
     );
   }

@@ -61,6 +61,9 @@ export async function retrieveContext(sessionId: string, agentId: string, query:
       for (const topic of indexData.topics) {
         if (terms.some(t => topic.tags?.includes(t) || topic.title.toLowerCase().includes(t))) {
             const topicPath = path.join(ROOT_DIR, topic.sourcePath);
+            // Validate that resolved path stays inside ROOT_DIR (prevent path traversal)
+            const resolved = path.resolve(topicPath);
+            if (!resolved.startsWith(path.resolve(ROOT_DIR) + path.sep)) continue;
             if (fs.existsSync(topicPath)) {
                slices.push({
                  source: 'topic',

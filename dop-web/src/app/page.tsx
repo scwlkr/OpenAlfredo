@@ -13,6 +13,14 @@ type AmbitionTask = {
   raw: string;
 };
 
+// Authenticated fetch wrapper — injects the API key as a Bearer token
+function authFetch(url: string, opts: RequestInit = {}): Promise<Response> {
+  const key = (window as any).__DOP_API_KEY || '';
+  const headers = new Headers(opts.headers);
+  if (key) headers.set('Authorization', `Bearer ${key}`);
+  return fetch(url, { ...opts, headers });
+}
+
 export default function Home() {
   const [onboarding, setOnboarding] = useState(true);
   const [persona, setPersona] = useState('');
@@ -27,36 +35,48 @@ export default function Home() {
     sessionRef.current = { sessionId, model };
   }, [sessionId, model]);
 
+  // Bootstrap: fetch the API key first, then load models + onboarding state
   useEffect(() => {
-    fetch('/api/models')
+    fetch('/api/auth/key')
       .then(res => res.json())
       .then(data => {
-        if (data.models && data.models.length > 0) {
-          const names = data.models.map((m: { name: string }) => m.name);
-          setAvailableModels(names);
-          setModel(names[0]);
-        } else {
-          setAvailableModels(['llama3', 'mistral', 'phi3']);
-        }
+        if (data.key) (window as any).__DOP_API_KEY = data.key;
       })
-      .catch(() => setAvailableModels(['llama3', 'mistral', 'phi3']));
+      .then(() => {
+        authFetch('/api/models')
+          .then(res => res.json())
+          .then(data => {
+            if (data.models && data.models.length > 0) {
+              const names = data.models.map((m: { name: string }) => m.name);
+              setAvailableModels(names);
+              setModel(names[0]);
+            } else {
+              setAvailableModels(['llama3', 'mistral', 'phi3']);
+            }
+          })
+          .catch(() => setAvailableModels(['llama3', 'mistral', 'phi3']));
 
-    fetch('/api/onboarding?agentId=default')
-      .then(res => res.json())
-      .then(data => {
-        setOnboarding(!data.exists);
-        if (data.exists) {
-          // Initialize session
-          setSessionId(crypto.randomUUID());
-        }
-        setLoading(false);
-      });
+        authFetch('/api/onboarding?agentId=default')
+          .then(res => res.json())
+          .then(data => {
+            setOnboarding(!data.exists);
+            if (data.exists) {
+              setSessionId(crypto.randomUUID());
+            }
+            setLoading(false);
+          });
+      })
+      .catch(() => setLoading(false));
   }, []);
 
   const { messages, sendMessage, status } = useChat({
     transport: new DefaultChatTransport({
       api: '/api/chat',
-      body: () => sessionRef.current
+      body: () => sessionRef.current,
+      headers: (): Record<string, string> => {
+        const key = (window as any).__DOP_API_KEY;
+        return key ? { 'Authorization': `Bearer ${key}` } : {};
+      }
     })
   });
 
@@ -72,14 +92,14 @@ export default function Home() {
 
   const fetchTasks = async () => {
     try {
-      const res = await fetch('/api/ambition');
+      const res = await authFetch('/api/ambition');
       const data = await res.json();
       setTasks(data.tasks || []);
     } catch {}
   };
 
   const toggleTask = async (raw: string, done: boolean) => {
-    await fetch('/api/ambition', {
+    await authFetch('/api/ambition', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ raw, done }),
@@ -88,7 +108,7 @@ export default function Home() {
   };
 
   const removeTask = async (raw: string) => {
-    await fetch('/api/ambition', {
+    await authFetch('/api/ambition', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ raw }),
@@ -106,7 +126,7 @@ export default function Home() {
       body += ` |when:${iso}`;
     }
     if (newTaskRecur.trim()) body += ` |recur:${newTaskRecur.trim()}`;
-    await fetch('/api/ambition', {
+    await authFetch('/api/ambition', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ task: body }),
@@ -119,7 +139,7 @@ export default function Home() {
 
   const fetchLogs = async () => {
     try {
-      const res = await fetch('/api/logs');
+      const res = await authFetch('/api/logs');
       const data = await res.json();
       setLogs(data.logs || []);
     } catch {}
@@ -150,7 +170,7 @@ export default function Home() {
 
   const completeOnboarding = async () => {
     setLoading(true);
-    await fetch('/api/onboarding', {
+    await authFetch('/api/onboarding', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ agentId: 'default', persona, goals }),

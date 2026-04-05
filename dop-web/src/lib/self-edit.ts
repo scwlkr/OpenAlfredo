@@ -152,7 +152,8 @@ export function buildCodeIndex(): string {
     'dop-web/src/lib',
     'dop-web/src/app/api',
     'dop-web/daemon.ts',
-    'dop-web/.env',
+    // NOTE: .env intentionally excluded — contains secrets (TELEGRAM_TOKEN)
+    'dop-web/.env.example',
     'dop-web/prisma/schema.prisma',
     'bin',
     'AMBITION.md',

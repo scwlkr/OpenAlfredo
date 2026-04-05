@@ -19,6 +19,7 @@
 
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 const { spawn, execFile } = require('child_process');
 
 const REPO_ROOT = path.join(__dirname, '..');
@@ -55,17 +56,39 @@ function loadAllowlist() {
 }
 function saveAllowlist(s) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
-  fs.writeFileSync(ALLOWLIST_FILE, JSON.stringify([...s]));
+  fs.writeFileSync(ALLOWLIST_FILE, JSON.stringify([...s]), { mode: 0o600 });
 }
 function loadOrCreateCode() {
-  try {
-    const c = fs.readFileSync(PAIRING_FILE, 'utf-8').trim();
-    if (c) return c;
-  } catch {}
-  const code = Math.floor(100000 + Math.random() * 900000).toString();
+  // Use CSPRNG instead of Math.random
+  const code = crypto.randomInt(100000, 999999).toString();
   fs.mkdirSync(DATA_DIR, { recursive: true });
-  fs.writeFileSync(PAIRING_FILE, code);
+  fs.writeFileSync(PAIRING_FILE, code, { mode: 0o600 });
   return code;
+}
+const KEEPER_CODE_GENERATED_AT = Date.now();
+const KEEPER_CODE_EXPIRY_MS = 5 * 60 * 1000; // 5 minutes
+
+// Brute-force protection
+const keeperAttempts = new Map();
+const MAX_ATTEMPTS = 5;
+const LOCKOUT_MS = 15 * 60 * 1000;
+
+function checkKeeperRateLimit(id) {
+  const entry = keeperAttempts.get(id);
+  if (entry && entry.lockedUntil > Date.now()) return false;
+  return true;
+}
+function recordKeeperFailure(id) {
+  const entry = keeperAttempts.get(id) || { count: 0, lockedUntil: 0 };
+  entry.count++;
+  if (entry.count >= MAX_ATTEMPTS) {
+    entry.lockedUntil = Date.now() + LOCKOUT_MS;
+    entry.count = 0;
+  }
+  keeperAttempts.set(id, entry);
+}
+function clearKeeperAttempts(id) {
+  keeperAttempts.delete(id);
 }
 
 const allowlist = loadAllowlist();
@@ -89,12 +112,26 @@ const needPair = (id) => bot.sendMessage(id, '🔒 Send `/keepPair <code>` — s
 
 bot.onText(/^\/keepPair\s+(\S+)/i, (msg, m) => {
   const id = msg.chat.id;
+
+  // Brute-force protection
+  if (!checkKeeperRateLimit(id)) {
+    bot.sendMessage(id, '🔒 Too many failed pairing attempts. Try again later.');
+    return;
+  }
+
   if (m[1].trim() === PAIRING_CODE) {
+    // Check expiry
+    if (Date.now() - KEEPER_CODE_GENERATED_AT > KEEPER_CODE_EXPIRY_MS) {
+      bot.sendMessage(id, '❌ Pairing code has expired. Restart the keeper to generate a new one.');
+      return;
+    }
     allowlist.add(id);
     saveAllowlist(allowlist);
+    clearKeeperAttempts(id);
     bot.sendMessage(id, '✅ Keeper paired.\n\nCommands:\n/podStart\n/podStop\n/podStatus\n/keepUnpair');
     console.log(`✅ keeper paired chat ${id}`);
   } else {
+    recordKeeperFailure(id);
     bot.sendMessage(id, '❌ Invalid pairing code.');
   }
 });

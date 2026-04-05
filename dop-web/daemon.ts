@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import fs from 'fs';
 import path from 'path';
+import crypto from 'crypto';
 import { spawn } from 'child_process';
 import TelegramBot from 'node-telegram-bot-api';
 import cron from 'node-cron';
@@ -33,7 +34,7 @@ function loadChatId(): number | null {
 function saveChatId(id: number) {
   try {
     fs.mkdirSync(path.dirname(CHAT_ID_FILE), { recursive: true });
-    fs.writeFileSync(CHAT_ID_FILE, String(id));
+    fs.writeFileSync(CHAT_ID_FILE, String(id), { mode: 0o600 });
   } catch (e) {
     console.error('Could not persist chat id:', e);
   }
@@ -52,7 +53,7 @@ function loadAllowlist(): Set<number> {
 function saveAllowlist(s: Set<number>) {
   try {
     fs.mkdirSync(DATA_DIR, { recursive: true });
-    fs.writeFileSync(ALLOWLIST_FILE, JSON.stringify([...s]));
+    fs.writeFileSync(ALLOWLIST_FILE, JSON.stringify(Array.from(s)), { mode: 0o600 });
   } catch (e) {
     console.error('Could not persist allowlist:', e);
   }
@@ -60,14 +61,38 @@ function saveAllowlist(s: Set<number>) {
 const PAIRING_CODE_GENERATED_AT = Date.now();
 
 function loadOrCreatePairingCode(): string {
-  const code = Math.floor(100000 + Math.random() * 900000).toString();
+  // Use CSPRNG instead of Math.random for unpredictable pairing codes
+  const code = crypto.randomInt(100000, 999999).toString();
   try {
     fs.mkdirSync(DATA_DIR, { recursive: true });
-    fs.writeFileSync(PAIRING_CODE_FILE, code);
+    fs.writeFileSync(PAIRING_CODE_FILE, code, { mode: 0o600 });
   } catch (e) {
     console.error('Could not persist pairing code:', e);
   }
   return code;
+}
+
+// Brute-force protection for pairing: lock out after 5 failed attempts
+const pairingAttempts = new Map<number, { count: number; lockedUntil: number }>();
+const MAX_PAIRING_ATTEMPTS = 5;
+const LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 minutes
+
+function checkPairingRateLimit(chatId: number): boolean {
+  const entry = pairingAttempts.get(chatId);
+  if (entry && entry.lockedUntil > Date.now()) return false; // still locked
+  return true;
+}
+function recordPairingFailure(chatId: number): void {
+  const entry = pairingAttempts.get(chatId) || { count: 0, lockedUntil: 0 };
+  entry.count++;
+  if (entry.count >= MAX_PAIRING_ATTEMPTS) {
+    entry.lockedUntil = Date.now() + LOCKOUT_DURATION_MS;
+    entry.count = 0;
+  }
+  pairingAttempts.set(chatId, entry);
+}
+function clearPairingAttempts(chatId: number): void {
+  pairingAttempts.delete(chatId);
 }
 
 const allowlist = loadAllowlist();
@@ -92,8 +117,8 @@ function saveModelMap(m: Map<number, string>) {
   try {
     fs.mkdirSync(DATA_DIR, { recursive: true });
     const obj: Record<string, string> = {};
-    for (const [k, v] of m) obj[String(k)] = v;
-    fs.writeFileSync(MODEL_MAP_FILE, JSON.stringify(obj, null, 2));
+    for (const entry of Array.from(m.entries())) obj[String(entry[0])] = entry[1];
+    fs.writeFileSync(MODEL_MAP_FILE, JSON.stringify(obj, null, 2), { mode: 0o600 });
   } catch (e) {
     console.error('Could not persist model map:', e);
   }
@@ -126,6 +151,13 @@ if (TELEGRAM_TOKEN) {
   bot.onText(/^\/pair\s+(\S+)/, (msg, match) => {
     const chatId = msg.chat.id;
     const code = match?.[1]?.trim();
+
+    // Brute-force protection
+    if (!checkPairingRateLimit(chatId)) {
+      bot?.sendMessage(chatId, '🔒 Too many failed pairing attempts. Try again later.');
+      return;
+    }
+
     if (code === PAIRING_CODE) {
       if (Date.now() - PAIRING_CODE_GENERATED_AT > 5 * 60 * 1000) {
         bot?.sendMessage(chatId, '❌ Pairing code has expired. Restart the pod to generate a new one.');
@@ -135,6 +167,7 @@ if (TELEGRAM_TOKEN) {
       saveAllowlist(allowlist);
       savedChatId = chatId;
       saveChatId(chatId);
+      clearPairingAttempts(chatId);
       bot?.sendMessage(
         chatId,
         '✅ *Paired.* Death of Prompt is now listening to this chat.\n\nCommands:\n/status — show current ambitions\n/heartbeat — force a heartbeat tick\n/model — list or switch the Ollama model\n/podStop — tear down the pod (this daemon included)\n/podStatus — pod process status\n/unpair — disconnect this chat',
@@ -142,6 +175,7 @@ if (TELEGRAM_TOKEN) {
       );
       console.log(`✅ Paired new chat id=${chatId} (total paired: ${allowlist.size})`);
     } else {
+      recordPairingFailure(chatId);
       bot?.sendMessage(chatId, '❌ Invalid pairing code.');
     }
   });
