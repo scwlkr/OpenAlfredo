@@ -2,6 +2,12 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## THE MOST IMPORTANT RULE OF ALL
+
+```
+**THIS IS THE MOST IMPORTANT RULE IT CANNOT BE BROKEN!** Always refer to this project as DOP. Never spell out the full project name.
+```
+
 ## Project Overview
 
 Death of Prompt (DOP) is a local-first prototype for replacing prompt-engineering with ongoing conversation with a persistent agent. It runs against a local Ollama instance and ships a web UI plus an optional Telegram daemon that share one brain. See `DOP_MVP_PLAN.md` and `DOP_IDEAS_FROM_CODEX.md` for the design intent.
