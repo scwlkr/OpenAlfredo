@@ -1,0 +1,17 @@
+{
+  "procs": [
+    {
+      "name": "web",
+      "pid": 21221,
+      "startedByUs": true,
+      "log": "/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/data/logs/pod-web.log"
+    },
+    {
+      "name": "daemon",
+      "pid": 21222,
+      "startedByUs": true,
+      "log": "/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/data/logs/pod-daemon.log"
+    }
+  ],
+  "startedAt": "2026-04-05T04:37:25.569Z"
+}

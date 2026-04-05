@@ -87,14 +87,17 @@ cp .env.example .env
 npx prisma db push
 npx prisma generate
 
-# 4. Launch the web UI
-npm run dev     # → http://localhost:3000
+# 4. Launch the full stack (ollama + web + telegram daemon)
+cd ..
+node bin/dop.js pod         # → http://localhost:3000
 ```
 
-Or from the repo root:
+One command spins up Ollama (if it isn't already running), the Next.js dashboard, and the Telegram daemon. Ctrl-C tears it all down. From another terminal you can also run `node bin/dop.js pod stop` / `pod status`.
+
+If you only want the web UI (no daemon, no Ollama management):
 
 ```bash
-node bin/dop.js dashboard   # same thing, opens the browser
+node bin/dop.js dashboard
 ```
 
 On first load you'll walk through the onboarding flow — this writes your agent's initial `SOUL.md`.
@@ -103,7 +106,7 @@ On first load you'll walk through the onboarding flow — this writes your agent
 
 ## 👻 The Restless Daemon
 
-The daemon is a separate long-running process. It powers **both** the Telegram bot and the `RESTLESS.md` heartbeat.
+The daemon is a separate long-running process. It powers **both** the Telegram bot and the `RESTLESS.md` heartbeat. `dop pod` starts it for you, but you can also run it standalone:
 
 ```bash
 # from dop-web/
@@ -157,22 +160,34 @@ In `dop-web/.env`:
 TELEGRAM_TOKEN=123456789:AA...your-token-here
 ```
 
-### 3. Start the daemon
+### 3. Start the pod (or just the daemon)
 
 ```bash
-cd dop-web
-npx tsx daemon.ts
+node bin/dop.js pod          # starts everything
+# or, daemon only:
+cd dop-web && npx tsx daemon.ts
 ```
 
-### 4. Subscribe from your phone
+On startup the daemon prints a 6-digit **pairing code** and the exact message to send:
 
-Open a chat with your bot and send `/start`. You're now subscribed — the daemon will send proactive heartbeat notifications and AMBITION reminders to this chat. The chat ID is persisted to `dop-web/data/.telegram-chat-id` so it survives restarts.
+```
+🔑 Telegram pairing code: 563672
+   In Telegram, send:  /pair 563672
+```
 
-### Bot commands
+If you miss it, run `node bin/dop.js pair` from the repo root.
+
+### 4. Pair your phone
+
+Open a chat with your bot and send `/pair <code>`. That adds your chat to the allowlist (`dop-web/data/.telegram-allowlist.json`). Unpaired chats get a pairing prompt and nothing else — no commands, no chat. Pairing persists across restarts. To rotate the code, delete `dop-web/data/.telegram-pairing-code` and restart the daemon.
+
+### Bot commands (paired chats only)
 
 | Command | Action |
 |---|---|
-| `/start` | Subscribe this chat to proactive alerts |
+| `/pair <code>` | Pair this chat (only command unpaired chats can use) |
+| `/unpair` | Disconnect this chat from the agent |
+| `/start` | Confirm subscription + show help |
 | `/status` | Show current AMBITION.md contents |
 | `/heartbeat` | Force a heartbeat tick now and show the result |
 | *(any other text)* | Converse with the agent |
@@ -200,7 +215,17 @@ Open a chat with your bot and send `/start`. You're now subscribed — the daemo
 
 ## 🧪 Dev Commands
 
-All from `dop-web/`:
+From the **repo root** (`dop` CLI):
+
+```bash
+node bin/dop.js pod          # start ollama + web + daemon
+node bin/dop.js pod stop     # tear down the whole pod
+node bin/dop.js pod status   # per-process alive/dead state
+node bin/dop.js pair         # print current Telegram pairing code
+node bin/dop.js dashboard    # web UI only (legacy)
+```
+
+From `dop-web/`:
 
 ```bash
 npm run dev             # Next dev server
@@ -210,7 +235,7 @@ npx vitest              # run tests
 npx vitest run src/lib/memory-retrieval.test.ts   # single test
 npx prisma db push      # sync schema to SQLite
 npx prisma generate     # regen client after schema edit
-npx tsx daemon.ts       # Telegram + heartbeat daemon
+npx tsx daemon.ts       # Telegram + heartbeat daemon (standalone)
 ```
 
 ---

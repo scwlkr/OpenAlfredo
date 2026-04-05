@@ -1,0 +1,99 @@
+💀 Starting Telegram Bot...
+
+🔑 Telegram pairing code: 563672
+   In Telegram, send:  /pair 563672
+   Paired chats: none yet
+
+⏰ Starting AMBITION cron (*/30 * * * *)
+💓 Starting RESTLESS heartbeat (0 * * * *)
+☠️  DOP Daemon is alive. The agent is restless.
+💀 Starting Telegram Bot...
+
+🔑 Telegram pairing code: 563672
+   In Telegram, send:  /pair 563672
+   Paired chats: none yet
+
+⏰ Starting AMBITION cron (*/30 * * * *)
+💓 Starting RESTLESS heartbeat (0 * * * *)
+☠️  DOP Daemon is alive. The agent is restless.
+💀 Starting Telegram Bot...
+
+🔑 Telegram pairing code: 563672
+   In Telegram, send:  /pair 563672
+   Paired chats: none yet
+
+⏰ Starting AMBITION cron (*/30 * * * *)
+💓 Starting RESTLESS heartbeat (0 * * * *)
+☠️  DOP Daemon is alive. The agent is restless.
+💀 Starting Telegram Bot...
+
+🔑 Telegram pairing code: 563672
+   In Telegram, send:  /pair 563672
+   Paired chats: none yet
+
+⏰ Starting AMBITION cron (*/30 * * * *)
+💓 Starting RESTLESS heartbeat (0 * * * *)
+☠️  DOP Daemon is alive. The agent is restless.
+✅ Paired new chat id=8318055728 (total paired: 1)
+Heartbeat ollama error: ResponseError: model 'llama3' not found
+    at checkOk (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/node_modules/ollama/dist/browser.cjs:77:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async post (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/node_modules/ollama/dist/browser.cjs:160:3)
+    at async Ollama.processStreamableRequest (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/node_modules/ollama/dist/browser.cjs:301:22)
+    at async runHeartbeat (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/src/lib/dop.ts:125:22)
+    at async Object.callback (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/daemon.ts:153:15) {
+  error: "model 'llama3' not found",
+  status_code: 404
+}
+Ollama error: _OllamaError: model 'llama3' not found
+    at OllamaChatLanguageModel.doGenerate (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/node_modules/ai-sdk-ollama/src/models/chat-language-model.ts:668:13)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async fn (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/node_modules/ai/src/generate-text/generate-text.ts:810:34)
+    ... 7 lines matching cause stack trace ...
+    at async TelegramBot.<anonymous> (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/daemon.ts:176:19) {
+  cause: ResponseError: model 'llama3' not found
+      at checkOk (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/node_modules/ollama/dist/browser.cjs:77:9)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async post (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/node_modules/ollama/dist/browser.cjs:160:3)
+      at async Ollama.processStreamableRequest (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/node_modules/ollama/dist/browser.cjs:301:22)
+      at async OllamaChatLanguageModel.doGenerate (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/node_modules/ai-sdk-ollama/src/models/chat-language-model.ts:583:25)
+      at async fn (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/node_modules/ai/src/generate-text/generate-text.ts:810:34)
+      at async <anonymous> (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/node_modules/ai/src/telemetry/record-span.ts:32:24)
+      at async _retryWithExponentialBackoff (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/node_modules/ai/src/util/retry-with-exponential-backoff.ts:96:12)
+      at async fn (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/node_modules/ai/src/generate-text/generate-text.ts:765:36)
+      at async <anonymous> (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/node_modules/ai/src/telemetry/record-span.ts:32:24)
+      at async generateText (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/node_modules/ai/src/generate-text/generate-text.ts:527:12)
+      at async processChatSync (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/src/lib/dop-engine.ts:118:20)
+      at async chatWithAgent (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/src/lib/dop.ts:37:12)
+      at async TelegramBot.<anonymous> (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/daemon.ts:176:19) {
+    error: "model 'llama3' not found",
+    status_code: 404
+  },
+  data: undefined
+}
+Ollama error: _OllamaError: model 'llama3' not found
+    at OllamaChatLanguageModel.doGenerate (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/node_modules/ai-sdk-ollama/src/models/chat-language-model.ts:668:13)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async fn (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/node_modules/ai/src/generate-text/generate-text.ts:810:34)
+    ... 7 lines matching cause stack trace ...
+    at async TelegramBot.<anonymous> (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/daemon.ts:176:19) {
+  cause: ResponseError: model 'llama3' not found
+      at checkOk (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/node_modules/ollama/dist/browser.cjs:77:9)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async post (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/node_modules/ollama/dist/browser.cjs:160:3)
+      at async Ollama.processStreamableRequest (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/node_modules/ollama/dist/browser.cjs:301:22)
+      at async OllamaChatLanguageModel.doGenerate (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/node_modules/ai-sdk-ollama/src/models/chat-language-model.ts:583:25)
+      at async fn (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/node_modules/ai/src/generate-text/generate-text.ts:810:34)
+      at async <anonymous> (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/node_modules/ai/src/telemetry/record-span.ts:32:24)
+      at async _retryWithExponentialBackoff (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/node_modules/ai/src/util/retry-with-exponential-backoff.ts:96:12)
+      at async fn (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/node_modules/ai/src/generate-text/generate-text.ts:765:36)
+      at async <anonymous> (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/node_modules/ai/src/telemetry/record-span.ts:32:24)
+      at async generateText (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/node_modules/ai/src/generate-text/generate-text.ts:527:12)
+      at async processChatSync (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/src/lib/dop-engine.ts:118:20)
+      at async chatWithAgent (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/src/lib/dop.ts:37:12)
+      at async TelegramBot.<anonymous> (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/daemon.ts:176:19) {
+    error: "model 'llama3' not found",
+    status_code: 404
+  },
+  data: undefined
+}

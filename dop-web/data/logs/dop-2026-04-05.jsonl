@@ -103,3 +103,5 @@
 {"timestamp":"2026-04-05T03:48:39.364Z","level":"INFO","event":"workspace_file_saved","data":{"sessionId":"test-f15-7lw5ndfr","name":"plan-zp9szj.md","path":"/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/data/workspace/plan-zp9szj.md"}}
 {"timestamp":"2026-04-05T03:48:39.368Z","level":"INFO","event":"context_retrieved","data":{"sessionId":"test-f4b-hluh1yah","query":"hey","sliceCount":2}}
 {"timestamp":"2026-04-05T03:53:56.230Z","level":"INFO","event":"context_retrieved","data":{"sessionId":"3050da95-199c-413e-9c0b-d92a96260df8","query":"hello is this working?","sliceCount":2}}
+{"timestamp":"2026-04-05T04:39:47.378Z","level":"INFO","event":"context_retrieved","data":{"sessionId":"telegram-8318055728","query":"Add a restless action to remind me to go to bed at 11:45pm","sliceCount":2}}
+{"timestamp":"2026-04-05T04:40:35.391Z","level":"INFO","event":"context_retrieved","data":{"sessionId":"telegram-8318055728","query":"Add a restless action to remind me to go to bed at 11:45pm","sliceCount":2}}

@@ -10,7 +10,7 @@ Death of Prompt (DOP) is a local-first prototype for replacing prompt-engineerin
 
 This is a two-package repo. Do not conflate them:
 
-- `/` (root) — thin `dop` CLI wrapper (CommonJS, yargs) whose only real command is `dop dashboard`, which `cd`s into `dop-web` and runs `npm run dev`. See `bin/dop.js`.
+- `/` (root) — `dop` CLI wrapper (CommonJS, yargs) that orchestrates the whole stack. See `bin/dop.js`.
 - `/dop-web` — the actual application: Next.js 14 App Router + Prisma/SQLite + Ollama. **All real work happens here.** When running npm scripts, assume cwd is `dop-web/` unless stated otherwise.
 
 ## Common Commands
@@ -28,9 +28,19 @@ npx prisma db push           # sync schema to SQLite
 npx prisma generate          # regenerate prisma client after schema edits
 ```
 
-From the repo root you can also launch the UI via `node bin/dop.js dashboard` (spawns `npm run dev` in `dop-web/` and opens the browser).
+### `dop` CLI (repo root)
 
-The optional Telegram + cron daemon is `dop-web/daemon.ts` (run with `npx tsx daemon.ts`). It needs `TELEGRAM_TOKEN` set and a running Ollama; it schedules the every-30-minute AMBITION reminder scan and the hourly RESTLESS heartbeat.
+```bash
+dop pod              # start full stack: ollama (if down) + next dev + telegram daemon
+dop pod stop         # tear down the whole pod (SIGTERM process groups, then SIGKILL sweep)
+dop pod status       # show alive/dead state of each pod process
+dop pair             # print the current telegram pairing code
+dop dashboard        # web UI only (no daemon, no ollama) — legacy convenience
+```
+
+`dop pod` streams prefixed logs (`[ollama] [web] [daemon]`) to stdout and mirrors them to `dop-web/data/logs/pod-*.log`. PID state lives at `dop-web/data/.dop-pod.json`. Ctrl-C in the foreground pod triggers the same teardown as `dop pod stop`. Ollama is only started if :11434 isn't already up, and only killed on stop if the pod launched it.
+
+The daemon (`dop-web/daemon.ts`) requires `TELEGRAM_TOKEN` and runs the every-30-min AMBITION scan + hourly RESTLESS heartbeat. It can also be run directly: `cd dop-web && npx tsx daemon.ts`.
 
 ## Environment & External Dependencies
 
@@ -65,7 +75,11 @@ All retrievals go through `logInfo('context_retrieved', …)` in `src/lib/logger
 
 ### Telegram + cron daemon (`src/lib/dop.ts`)
 
-Runs out of `daemon.ts` via `tsx`. Delegates all user chat to `processChatSync`, so Telegram chats live in SQLite alongside web chats. Owns two cron workers:
+Runs out of `daemon.ts` via `tsx`. Delegates all user chat to `processChatSync`, so Telegram chats live in SQLite alongside web chats.
+
+**Pairing mode** — all Telegram handlers are gated behind an allowlist. On first startup, a 6-digit code is generated and persisted at `dop-web/data/.telegram-pairing-code` (printed on every daemon boot). Users pair with `/pair <code>`, which adds their chat id to `dop-web/data/.telegram-allowlist.json`. Unpaired chats only see a pairing prompt — `/start`, `/status`, `/heartbeat`, and plain messages are all refused. `/unpair` removes the current chat. Pairing persists across restarts; to rotate the code, delete the pairing-code file.
+
+Owns two cron workers:
 
 - **AMBITION cron** (`*/30 * * * *` default) — `checkCronTasks()` calls `ambition.dueTasks()` deterministically (no LLM) and sends due items to the subscribed Telegram chat.
 - **RESTLESS heartbeat** (`0 * * * *` default) — `runHeartbeat()` wakes the agent between user messages. Reads the canonical SOUL (`dop-web/data/agents/default/SOUL.md`) + current AMBITION + last 10 heartbeat log entries, and asks the LLM to emit `[[NOTIFY]]` / `[[TASK]]` / `[[REFLECT]]` / `[[REST]]` tokens. Logs each tick to `RESTLESS.md` at the repo root (capped at 50 entries). New tasks are appended via the shared `appendTask()`.
