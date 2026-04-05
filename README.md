@@ -192,9 +192,54 @@ Open a chat with your bot and send `/pair <code>`. That adds your chat to the al
 | `/heartbeat` | Force a heartbeat tick now and show the result |
 | `/model` | List installed Ollama models (✓ marks current) |
 | `/model <n\|name>` | Switch this chat to a different model (persists across restarts) |
+| `/pod status` | Show per-process alive/dead state of the pod |
+| `/pod stop` | Tear down the whole pod remotely (kills this daemon too — needs the keeper to restart) |
 | *(any other text)* | Converse with the agent |
 
 Per-chat model selections are stored in `dop-web/data/.telegram-models.json`. The default model comes from `DOP_MODEL` in `.env`.
+
+---
+
+## 🛡️ Remote pod control — `dop keeper`
+
+`dop pod stop` / `dop pod` need *something* alive to start the pod after it's been torn down. The **keeper** is a tiny always-on supervisor that runs **outside** the pod — its only job is to start, stop, and status-check the pod from Telegram. Run it once from a persistent location (nohup, launchd, tmux) so it survives `dop pod stop`.
+
+```bash
+node bin/dop.js keeper        # foreground
+nohup node bin/dop.js keeper > keeper.log 2>&1 &   # detached
+```
+
+On startup it prints its own 6-digit pairing code (separate from the daemon's) and stores state in `dop-web/data/.keeper-pairing-code` + `.keeper-allowlist.json`.
+
+### Keeper commands (paired chats only)
+
+| Command | Action |
+|---|---|
+| `/keep-pair <code>` | Pair this chat with the keeper (only command unpaired chats can use) |
+| `/keep-unpair` | Disconnect this chat from the keeper |
+| `/pod-start` | Run `dop pod` detached — brings the pod back up |
+| `/pod-stop` | Run `dop pod stop` — tears the pod down |
+| `/pod-status` | Run `dop pod status` — shows alive/dead state |
+
+> ⚠️ **Shared bot token:** the keeper and the daemon poll the same `TELEGRAM_TOKEN`. When the pod is up, route pod commands through the daemon's `/pod` command; when the pod is down, the keeper has the token to itself. For dual-up operation, give the keeper a separate bot token.
+
+---
+
+## 🔧 Self-modification
+
+The agent can read and edit its own source code via three markers in its replies. Paths are scoped to the repo root; `.git/`, `node_modules/`, `.next/`, `data/`, and `.db` files are hard-blocked. Every applied edit is logged to `dop-web/data/logs/dop-<date>.jsonl` and summarized in the visible reply.
+
+| Marker | Shape |
+|---|---|
+| `[[READ_FILE: path]]` | Single-line. On the Telegram path, a 1-round reflex feeds the file contents back automatically. |
+| `[[EDIT_FILE: path]]` | Block with `<old>…</old><new>…</new>`. `old` must match exactly once. |
+| `[[WRITE_FILE: path]]` | Block — overwrites the whole file. |
+
+Just talk to the agent in natural language:
+
+> "Change the restless heartbeat from hourly to every 30 minutes."
+
+After edits apply, run `dop pod stop && dop pod` to load the changes. See `docs/SELF_MOD_TEST_PROMPTS.md` for tested prompts, verify/revert steps, and documented failure modes.
 
 ---
 
@@ -226,7 +271,9 @@ node bin/dop.js pod          # start ollama + web + daemon
 node bin/dop.js pod stop     # tear down the whole pod
 node bin/dop.js pod status   # per-process alive/dead state
 node bin/dop.js pair         # print current Telegram pairing code
+node bin/dop.js keeper       # run the always-on pod supervisor (standalone bot, runs OUTSIDE the pod)
 node bin/dop.js dashboard    # web UI only (legacy)
+node bin/dop.js completion   # generate zsh/bash completion script
 ```
 
 From `dop-web/`:

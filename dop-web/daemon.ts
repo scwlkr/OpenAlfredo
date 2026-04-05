@@ -57,11 +57,9 @@ function saveAllowlist(s: Set<number>) {
     console.error('Could not persist allowlist:', e);
   }
 }
+const PAIRING_CODE_GENERATED_AT = Date.now();
+
 function loadOrCreatePairingCode(): string {
-  try {
-    const existing = fs.readFileSync(PAIRING_CODE_FILE, 'utf-8').trim();
-    if (existing) return existing;
-  } catch {}
   const code = Math.floor(100000 + Math.random() * 900000).toString();
   try {
     fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -129,6 +127,10 @@ if (TELEGRAM_TOKEN) {
     const chatId = msg.chat.id;
     const code = match?.[1]?.trim();
     if (code === PAIRING_CODE) {
+      if (Date.now() - PAIRING_CODE_GENERATED_AT > 5 * 60 * 1000) {
+        bot?.sendMessage(chatId, '❌ Pairing code has expired. Restart the pod to generate a new one.');
+        return;
+      }
       allowlist.add(chatId);
       saveAllowlist(allowlist);
       savedChatId = chatId;

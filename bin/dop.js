@@ -226,6 +226,7 @@ function printPairingCode() {
     const code = fs.readFileSync(codeFile, 'utf-8').trim();
     console.log('Telegram pairing code: ' + code);
     console.log('In Telegram, send:     /pair ' + code);
+    console.log('  (Expires 5 minutes after daemon startup)');
   } catch {
     console.log('No pairing code yet. Start the daemon first (`dop pod`) to generate one.');
   }

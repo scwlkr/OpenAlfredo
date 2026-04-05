@@ -35,7 +35,9 @@ dop pod              # start full stack: ollama (if down) + next dev + telegram 
 dop pod stop         # tear down the whole pod (SIGTERM process groups, then SIGKILL sweep)
 dop pod status       # show alive/dead state of each pod process
 dop pair             # print the current telegram pairing code
+dop keeper           # run the always-on pod supervisor (standalone Telegram bot, runs OUTSIDE the pod)
 dop dashboard        # web UI only (no daemon, no ollama) — legacy convenience
+dop completion       # generate zsh/bash completion script
 ```
 
 `dop pod` streams prefixed logs (`[ollama] [web] [daemon]`) to stdout and mirrors them to `dop-web/data/logs/pod-*.log`. PID state lives at `dop-web/data/.dop-pod.json`. Ctrl-C in the foreground pod triggers the same teardown as `dop pod stop`. Ollama is only started if :11434 isn't already up, and only killed on stop if the pod launched it.
@@ -85,6 +87,45 @@ Owns two cron workers:
 
 - **AMBITION cron** (`*/30 * * * *` default) — `checkCronTasks()` calls `ambition.dueTasks()` deterministically (no LLM) and sends due items to the subscribed Telegram chat.
 - **RESTLESS heartbeat** (`0 * * * *` default) — `runHeartbeat()` wakes the agent between user messages. Reads the canonical SOUL (`dop-web/data/agents/default/SOUL.md`) + current AMBITION + last 10 heartbeat log entries, and asks the LLM to emit `[[NOTIFY]]` / `[[TASK]]` / `[[REFLECT]]` / `[[REST]]` tokens. Logs each tick to `RESTLESS.md` at the repo root (capped at 50 entries). New tasks are appended via the shared `appendTask()`.
+
+**Daemon bot commands** (all paired-gated via `isPaired()` except `/pair`):
+
+| Command | Handler | Notes |
+|---|---|---|
+| `/pair <code>` | adds chat to allowlist | only cmd an unpaired chat can use |
+| `/unpair` | removes chat from allowlist | |
+| `/start` | subscribe to proactive alerts | persists `savedChatId` |
+| `/status` | prints AMBITION.md | markdown-fenced |
+| `/heartbeat` | forces `runHeartbeat()` | shows NOTIFY/TASK/REFLECT tokens |
+| `/model` / `/model <n\|name>` | list or switch Ollama model | persists in `.telegram-models.json` |
+| `/pod status` | spawns `dop pod status` | returns per-process state |
+| `/pod stop` | spawns detached `dop pod stop` | kills this daemon — requires keeper to restart |
+
+### Keeper (`bin/keeper.js`)
+
+Standalone Telegram bot that runs **outside** the pod, so it survives `dop pod stop` and can bring the pod back up. Started via `dop keeper`. Has its own pairing code (`dop-web/data/.keeper-pairing-code`) and allowlist (`dop-web/data/.keeper-allowlist.json`) — separate from the daemon's. Reads `TELEGRAM_TOKEN` from `dop-web/.env` and requires `node-telegram-bot-api` from `dop-web/node_modules/`.
+
+| Command | Action |
+|---|---|
+| `/keep-pair <code>` | pair this chat with the keeper |
+| `/keep-unpair` | disconnect from the keeper |
+| `/pod-start` | spawns `node bin/dop.js pod` detached |
+| `/pod-stop` | runs `dop pod stop` |
+| `/pod-status` | runs `dop pod status` |
+
+**Token collision caveat:** keeper and daemon share one `TELEGRAM_TOKEN` and both use `polling: true`. When both are up, Telegram round-robins `getUpdates` between them. The intended deployment is: pod up → route commands through daemon's `/pod`; pod down → keeper has the token to itself naturally. For simultaneous operation, give the keeper its own bot token.
+
+### Self-modification (`src/lib/self-edit.ts`)
+
+The agent can read and mutate its own source via three markers in its replies. Scoped to `REPO_ROOT` (= `process.cwd() + '/..'` from the dop-web-rooted daemon/engine). Blocked paths: `.git/`, `node_modules/`, `.next/` at any depth; `dop-web/data/` and `data/` as prefixes; `.db`/`.sqlite*` extensions.
+
+| Marker | Shape | Parsed by |
+|---|---|---|
+| `[[READ_FILE: path]]` | single line | `parseSelfEdits` + `resolveReadMarkers` (1-round reflex on sync path) |
+| `[[EDIT_FILE: path]]\n<old>…</old>\n<new>…</new>\n[[/EDIT_FILE]]` | block, old must match exactly once | `applySelfEdit` |
+| `[[WRITE_FILE: path]]\n…\n[[/WRITE_FILE]]` | block, full overwrite | `applySelfEdit` |
+
+`buildSystemPrompt` injects a compact repo file index (via `buildCodeIndex()`) so the model knows what files exist without needing to READ first. On the **Telegram path** (`processChatSync`), if the model emits `READ_FILE` in turn 1, `resolveReadMarkers` satisfies them in-process and a second `generateText` call produces the real answer. On the **web streaming path** (`processChat`), there's no reflex loop — READ markers appear stripped in the reply, and the user re-prompts. Applied edits are logged via `logInfo('self_edit_applied' | 'self_edit_failed', …)` and summarized in the visible reply with a restart reminder. Test prompts live in `docs/SELF_MOD_TEST_PROMPTS.md`.
 
 ### Prisma / database
 
