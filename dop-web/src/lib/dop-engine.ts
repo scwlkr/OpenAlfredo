@@ -69,7 +69,7 @@ function handleMarkers(sessionId: string, text: string): string {
 }
 
 // Streaming chat turn — used by the web UI via /api/chat.
-export async function processChat(sessionId: string, userMessage: string, model: string = 'llama3') {
+export async function processChat(sessionId: string, userMessage: string, model: string = process.env.DOP_MODEL || 'llama3') {
   const session = await ensureSession(sessionId, 'default', model);
 
   await prisma.transcriptEntry.create({
@@ -104,7 +104,7 @@ export async function processChatSync(
   sessionId: string,
   userMessage: string,
   agentId: string = 'default',
-  model: string = 'llama3'
+  model: string = process.env.DOP_MODEL || 'llama3'
 ): Promise<string> {
   const session = await ensureSession(sessionId, agentId, model);
 

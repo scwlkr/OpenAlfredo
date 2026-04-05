@@ -190,7 +190,11 @@ Open a chat with your bot and send `/pair <code>`. That adds your chat to the al
 | `/start` | Confirm subscription + show help |
 | `/status` | Show current AMBITION.md contents |
 | `/heartbeat` | Force a heartbeat tick now and show the result |
+| `/model` | List installed Ollama models (✓ marks current) |
+| `/model <n\|name>` | Switch this chat to a different model (persists across restarts) |
 | *(any other text)* | Converse with the agent |
+
+Per-chat model selections are stored in `dop-web/data/.telegram-models.json`. The default model comes from `DOP_MODEL` in `.env`.
 
 ---
 

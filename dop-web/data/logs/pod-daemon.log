@@ -97,3 +97,104 @@ Ollama error: _OllamaError: model 'llama3' not found
   },
   data: undefined
 }
+Heartbeat ollama error: ResponseError: model 'llama3' not found
+    at checkOk (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/node_modules/ollama/dist/browser.cjs:77:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async post (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/node_modules/ollama/dist/browser.cjs:160:3)
+    at async Ollama.processStreamableRequest (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/node_modules/ollama/dist/browser.cjs:301:22)
+    at async runHeartbeat (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/src/lib/dop.ts:125:22)
+    at async <anonymous> (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/daemon.ts:204:20)
+    at async Timeout._onTimeout (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/node_modules/node-cron/src/scheduler/runner.ts:100:30) {
+  error: "model 'llama3' not found",
+  status_code: 404
+}
+💤 heartbeat: rest
+Heartbeat ollama error: ResponseError: model 'llama3' not found
+    at checkOk (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/node_modules/ollama/dist/browser.cjs:77:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async post (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/node_modules/ollama/dist/browser.cjs:160:3)
+    at async Ollama.processStreamableRequest (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/node_modules/ollama/dist/browser.cjs:301:22)
+    at async runHeartbeat (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/src/lib/dop.ts:125:22)
+    at async <anonymous> (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/daemon.ts:204:20)
+    at async Timeout._onTimeout (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/node_modules/node-cron/src/scheduler/runner.ts:100:30) {
+  error: "model 'llama3' not found",
+  status_code: 404
+}
+💤 heartbeat: rest
+Heartbeat ollama error: ResponseError: model 'llama3' not found
+    at checkOk (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/node_modules/ollama/dist/browser.cjs:77:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async post (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/node_modules/ollama/dist/browser.cjs:160:3)
+    at async Ollama.processStreamableRequest (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/node_modules/ollama/dist/browser.cjs:301:22)
+    at async runHeartbeat (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/src/lib/dop.ts:125:22)
+    at async <anonymous> (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/daemon.ts:204:20)
+    at async Timeout._onTimeout (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/node_modules/node-cron/src/scheduler/runner.ts:100:30) {
+  error: "model 'llama3' not found",
+  status_code: 404
+}
+💤 heartbeat: rest
+Heartbeat ollama error: ResponseError: model 'llama3' not found
+    at checkOk (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/node_modules/ollama/dist/browser.cjs:77:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async post (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/node_modules/ollama/dist/browser.cjs:160:3)
+    at async Ollama.processStreamableRequest (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/node_modules/ollama/dist/browser.cjs:301:22)
+    at async runHeartbeat (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/src/lib/dop.ts:125:22)
+    at async <anonymous> (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/daemon.ts:204:20)
+    at async Timeout._onTimeout (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/node_modules/node-cron/src/scheduler/runner.ts:100:30) {
+  error: "model 'llama3' not found",
+  status_code: 404
+}
+💤 heartbeat: rest
+Heartbeat ollama error: ResponseError: model 'llama3' not found
+    at checkOk (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/node_modules/ollama/dist/browser.cjs:77:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async post (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/node_modules/ollama/dist/browser.cjs:160:3)
+    at async Ollama.processStreamableRequest (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/node_modules/ollama/dist/browser.cjs:301:22)
+    at async runHeartbeat (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/src/lib/dop.ts:125:22)
+    at async <anonymous> (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/daemon.ts:204:20)
+    at async Timeout._onTimeout (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/node_modules/node-cron/src/scheduler/runner.ts:100:30) {
+  error: "model 'llama3' not found",
+  status_code: 404
+}
+💤 heartbeat: rest
+error: [polling_error] {"code":"EFATAL","message":"EFATAL: Error: read ECONNRESET"}
+Heartbeat ollama error: ResponseError: model 'llama3' not found
+    at checkOk (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/node_modules/ollama/dist/browser.cjs:77:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async post (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/node_modules/ollama/dist/browser.cjs:160:3)
+    at async Ollama.processStreamableRequest (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/node_modules/ollama/dist/browser.cjs:301:22)
+    at async runHeartbeat (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/src/lib/dop.ts:125:22)
+    at async <anonymous> (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/daemon.ts:204:20)
+    at async Timeout._onTimeout (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/node_modules/node-cron/src/scheduler/runner.ts:100:30) {
+  error: "model 'llama3' not found",
+  status_code: 404
+}
+💤 heartbeat: rest
+Heartbeat ollama error: ResponseError: model 'llama3' not found
+    at checkOk (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/node_modules/ollama/dist/browser.cjs:77:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async post (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/node_modules/ollama/dist/browser.cjs:160:3)
+    at async Ollama.processStreamableRequest (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/node_modules/ollama/dist/browser.cjs:301:22)
+    at async runHeartbeat (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/src/lib/dop.ts:125:22)
+    at async <anonymous> (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/daemon.ts:204:20)
+    at async Timeout._onTimeout (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/node_modules/node-cron/src/scheduler/runner.ts:100:30) {
+  error: "model 'llama3' not found",
+  status_code: 404
+}
+💤 heartbeat: rest
+error: [polling_error] {"code":"EFATAL","message":"EFATAL: Error: read ECONNRESET"}
+error: [polling_error] {"code":"EFATAL","message":"EFATAL: Error: read ECONNRESET"}
+error: [polling_error] {"code":"EFATAL","message":"EFATAL: Error: read ECONNRESET"}
+Heartbeat ollama error: ResponseError: model 'llama3' not found
+    at checkOk (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/node_modules/ollama/dist/browser.cjs:77:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async post (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/node_modules/ollama/dist/browser.cjs:160:3)
+    at async Ollama.processStreamableRequest (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/node_modules/ollama/dist/browser.cjs:301:22)
+    at async runHeartbeat (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/src/lib/dop.ts:125:22)
+    at async <anonymous> (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/daemon.ts:204:20)
+    at async Timeout._onTimeout (/Users/shanewalker/Desktop/dev/DeathOfPrompt/dop-web/node_modules/node-cron/src/scheduler/runner.ts:100:30) {
+  error: "model 'llama3' not found",
+  status_code: 404
+}
+💤 heartbeat: rest
+error: [polling_error] {"code":"EFATAL","message":"EFATAL: Error: read ECONNRESET"}

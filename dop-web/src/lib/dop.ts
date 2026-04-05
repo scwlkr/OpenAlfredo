@@ -31,10 +31,14 @@ function readFileSafe(filePath: string): string {
 
 // Each Telegram chat becomes its own long-lived DOP session so transcripts
 // accumulate per-user. `telegram-global` is used when no chatId is available.
-export async function chatWithAgent(message: string, chatId?: number | string): Promise<string> {
+export async function chatWithAgent(
+  message: string,
+  chatId?: number | string,
+  model?: string
+): Promise<string> {
   const sessionId = chatId ? `telegram-${chatId}` : 'telegram-global';
   try {
-    return await processChatSync(sessionId, message, DEFAULT_AGENT_ID);
+    return await processChatSync(sessionId, message, DEFAULT_AGENT_ID, model);
   } catch (err: any) {
     console.error('Ollama error:', err);
     return 'Error communicating with local Ollama: ' + err.message;
@@ -122,7 +126,10 @@ Emit one or more of these tokens. Do not explain. Do not chat. Be concise.`;
 
   let raw = '';
   try {
-    const response = await ollama.generate({ model: 'llama3', prompt: systemPrompt });
+    const response = await ollama.generate({
+      model: process.env.DOP_MODEL || 'llama3',
+      prompt: systemPrompt,
+    });
     raw = response.response;
   } catch (err: any) {
     console.error('Heartbeat ollama error:', err);

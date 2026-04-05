@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import TelegramBot from 'node-telegram-bot-api';
 import cron from 'node-cron';
+import ollama from 'ollama';
 import { chatWithAgent, checkCronTasks, runHeartbeat } from './src/lib/dop';
 import { readAmbition } from './src/lib/ambition';
 
@@ -16,6 +17,8 @@ const DATA_DIR = path.join(process.cwd(), 'data');
 const CHAT_ID_FILE = path.join(DATA_DIR, '.telegram-chat-id');
 const ALLOWLIST_FILE = path.join(DATA_DIR, '.telegram-allowlist.json');
 const PAIRING_CODE_FILE = path.join(DATA_DIR, '.telegram-pairing-code');
+const MODEL_MAP_FILE = path.join(DATA_DIR, '.telegram-models.json');
+const DEFAULT_MODEL = process.env.DOP_MODEL || 'llama3';
 
 function loadChatId(): number | null {
   try {
@@ -76,6 +79,31 @@ let savedChatId: number | null = loadChatId();
 // Drop a stale savedChatId if it isn't paired (legacy upgrade).
 if (savedChatId !== null && !allowlist.has(savedChatId)) savedChatId = null;
 
+// Per-chat model overrides. Key = chatId, value = model name. Absence = use
+// DOP_MODEL. Persisted so restarts preserve each user's selection.
+function loadModelMap(): Map<number, string> {
+  try {
+    const obj = JSON.parse(fs.readFileSync(MODEL_MAP_FILE, 'utf-8'));
+    return new Map(Object.entries(obj).map(([k, v]) => [Number(k), String(v)]));
+  } catch {
+    return new Map();
+  }
+}
+function saveModelMap(m: Map<number, string>) {
+  try {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+    const obj: Record<string, string> = {};
+    for (const [k, v] of m) obj[String(k)] = v;
+    fs.writeFileSync(MODEL_MAP_FILE, JSON.stringify(obj, null, 2));
+  } catch (e) {
+    console.error('Could not persist model map:', e);
+  }
+}
+const modelMap = loadModelMap();
+function modelFor(chatId: number): string {
+  return modelMap.get(chatId) || DEFAULT_MODEL;
+}
+
 function isPaired(chatId: number): boolean {
   return allowlist.has(chatId);
 }
@@ -106,13 +134,65 @@ if (TELEGRAM_TOKEN) {
       saveChatId(chatId);
       bot?.sendMessage(
         chatId,
-        '✅ *Paired.* Death of Prompt is now listening to this chat.\n\nCommands:\n/status — show current ambitions\n/heartbeat — force a heartbeat tick\n/unpair — disconnect this chat',
+        '✅ *Paired.* Death of Prompt is now listening to this chat.\n\nCommands:\n/status — show current ambitions\n/heartbeat — force a heartbeat tick\n/model — list or switch the Ollama model\n/unpair — disconnect this chat',
         { parse_mode: 'Markdown' }
       );
       console.log(`✅ Paired new chat id=${chatId} (total paired: ${allowlist.size})`);
     } else {
       bot?.sendMessage(chatId, '❌ Invalid pairing code.');
     }
+  });
+
+  bot.onText(/^\/model(?:\s+(.+))?$/, async (msg, match) => {
+    if (!isPaired(msg.chat.id)) return sendPairingPrompt(msg.chat.id);
+    const chatId = msg.chat.id;
+    const arg = match?.[1]?.trim();
+    let list: { name: string }[] = [];
+    try {
+      const res = await ollama.list();
+      list = res.models as { name: string }[];
+    } catch (err: any) {
+      bot?.sendMessage(chatId, '❌ Could not list Ollama models: ' + err.message);
+      return;
+    }
+    if (list.length === 0) {
+      bot?.sendMessage(chatId, '❌ No Ollama models installed. Run `ollama pull <model>` first.');
+      return;
+    }
+
+    if (!arg) {
+      const current = modelFor(chatId);
+      const lines = list.map((m, i) => {
+        const mark = m.name === current ? '✓' : ' ';
+        return `${mark} ${i + 1}. ${m.name}`;
+      });
+      bot?.sendMessage(
+        chatId,
+        `*Current:* \`${current}\`\n\n*Available:*\n\`\`\`\n${lines.join('\n')}\n\`\`\`\n\nSwitch with \`/model <number>\` or \`/model <name>\`.`,
+        { parse_mode: 'Markdown' }
+      );
+      return;
+    }
+
+    // Resolve by number or exact name (case-insensitive).
+    let picked: string | null = null;
+    const asNum = Number(arg);
+    if (Number.isInteger(asNum) && asNum >= 1 && asNum <= list.length) {
+      picked = list[asNum - 1].name;
+    } else {
+      const hit = list.find((m) => m.name.toLowerCase() === arg.toLowerCase());
+      if (hit) picked = hit.name;
+    }
+    if (!picked) {
+      bot?.sendMessage(chatId, `❌ Unknown model \`${arg}\`. Send \`/model\` to see the list.`, {
+        parse_mode: 'Markdown',
+      });
+      return;
+    }
+    modelMap.set(chatId, picked);
+    saveModelMap(modelMap);
+    bot?.sendMessage(chatId, `✅ Model set to \`${picked}\`.`, { parse_mode: 'Markdown' });
+    console.log(`🔧 chat ${chatId} → model=${picked}`);
   });
 
   bot.onText(/^\/unpair\b/, (msg) => {
@@ -134,7 +214,7 @@ if (TELEGRAM_TOKEN) {
     saveChatId(chatId);
     bot?.sendMessage(
       chatId,
-      '💀 *Death of Prompt* is listening.\n\nYou are subscribed to proactive alerts.\n\nCommands:\n/status — show current ambitions & last heartbeat\n/heartbeat — force a heartbeat tick now\n/unpair — disconnect this chat',
+      '💀 *Death of Prompt* is listening.\n\nYou are subscribed to proactive alerts.\n\nCommands:\n/status — show current ambitions & last heartbeat\n/heartbeat — force a heartbeat tick now\n/model — list or switch the Ollama model\n/unpair — disconnect this chat',
       { parse_mode: 'Markdown' }
     );
   });
@@ -173,7 +253,7 @@ if (TELEGRAM_TOKEN) {
     savedChatId = chatId;
     saveChatId(chatId);
     bot?.sendChatAction(chatId, 'typing');
-    const reply = await chatWithAgent(msg.text, chatId);
+    const reply = await chatWithAgent(msg.text, chatId, modelFor(chatId));
     bot?.sendMessage(chatId, reply);
   });
 } else {

@@ -77,7 +77,9 @@ All retrievals go through `logInfo('context_retrieved', …)` in `src/lib/logger
 
 Runs out of `daemon.ts` via `tsx`. Delegates all user chat to `processChatSync`, so Telegram chats live in SQLite alongside web chats.
 
-**Pairing mode** — all Telegram handlers are gated behind an allowlist. On first startup, a 6-digit code is generated and persisted at `dop-web/data/.telegram-pairing-code` (printed on every daemon boot). Users pair with `/pair <code>`, which adds their chat id to `dop-web/data/.telegram-allowlist.json`. Unpaired chats only see a pairing prompt — `/start`, `/status`, `/heartbeat`, and plain messages are all refused. `/unpair` removes the current chat. Pairing persists across restarts; to rotate the code, delete the pairing-code file.
+**Pairing mode** — all Telegram handlers are gated behind an allowlist. On first startup, a 6-digit code is generated and persisted at `dop-web/data/.telegram-pairing-code` (printed on every daemon boot). Users pair with `/pair <code>`, which adds their chat id to `dop-web/data/.telegram-allowlist.json`. Unpaired chats only see a pairing prompt — `/start`, `/status`, `/heartbeat`, `/model`, and plain messages are all refused. `/unpair` removes the current chat. Pairing persists across restarts; to rotate the code, delete the pairing-code file.
+
+**Per-chat model selection** — `/model` lists installed Ollama models (from `ollama.list()`, same source as the web UI's `/api/models`). `/model <n|name>` sets the chat's model, persisted to `dop-web/data/.telegram-models.json`. Falls back to `DOP_MODEL` env var (then `llama3`). The same env var is the default for the web `processChat` and the heartbeat's direct `ollama.generate` call.
 
 Owns two cron workers:
 
