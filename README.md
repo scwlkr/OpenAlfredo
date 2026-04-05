@@ -171,8 +171,8 @@ cd dop-web && npx tsx daemon.ts
 On startup the daemon prints a 6-digit **pairing code** and the exact message to send:
 
 ```
-🔑 Telegram pairing code: 563672
-   In Telegram, send:  /pair 563672
+🔑 Telegram pairing code: 123456 (expires in 5 minutes)
+   In Telegram, send:  /pair 123456
 ```
 
 If you miss it, run `node bin/dop.js pair` from the repo root.
