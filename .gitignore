@@ -1,0 +1,15 @@
+# Environment variables
+.env
+
+# Node modules
+node_modules
+
+# Logs
+logs
+
+# OS generated files
+.DS_Store
+
+# Other
+CLAUDE.md
+
