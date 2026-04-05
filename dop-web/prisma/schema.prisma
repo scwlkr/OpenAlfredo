@@ -25,3 +25,12 @@ model TranscriptEntry {
   searchTags String? // Comma-separated or JSON
   createdAt  DateTime    @default(now())
 }
+
+model MemoryIndexEntry {
+  id         String   @id @default(uuid())
+  title      String
+  summary    String
+  tags       String? // Comma-separated for basic retrieval
+  sourcePath String // e.g. "data/memory/topics/my-topic.md"
+  freshness  DateTime @default(now())
+}

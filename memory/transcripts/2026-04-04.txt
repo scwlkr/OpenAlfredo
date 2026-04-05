@@ -1,0 +1,18 @@
+[2026-04-04T21:56:54.311Z] user: Hi
+[2026-04-04T21:56:54.311Z] agent: Hello there.
+[2026-04-04T21:56:54.312Z] user: remind me to grab laundry
+[2026-04-04T21:56:54.312Z] agent: Ok.  done.
+
+*(Task added to AMBITION.md)*
+[2026-04-04T21:56:54.313Z] user: hi
+[2026-04-04T21:56:54.316Z] user: trace-vmtyfd
+[2026-04-04T21:56:54.316Z] agent: ack
+[2026-04-04T21:56:58.921Z] user: Hi
+[2026-04-04T21:56:58.922Z] agent: Hello there.
+[2026-04-04T21:56:58.923Z] user: remind me to grab laundry
+[2026-04-04T21:56:58.923Z] agent: Ok.  done.
+
+*(Task added to AMBITION.md)*
+[2026-04-04T21:56:58.924Z] user: hi
+[2026-04-04T21:56:58.927Z] user: trace-11vyq0
+[2026-04-04T21:56:58.927Z] agent: ack

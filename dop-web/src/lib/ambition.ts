@@ -1,9 +1,9 @@
 import fs from 'fs';
 import path from 'path';
 
-// AMBITION.md lives inside dop-web/data/ alongside the rest of the web path's
-// state (SQLite db, memory/, workspace/, logs/).
-export const AMBITION_PATH = path.join(process.cwd(), 'data', 'AMBITION.md');
+// AMBITION.md lives at the repo root so both the web app and the Telegram daemon
+// read/write the same file.
+export const AMBITION_PATH = path.join(process.cwd(), '..', 'AMBITION.md');
 
 export type AmbitionTask = {
   text: string;
