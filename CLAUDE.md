@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## THE MOST IMPORTANT RULE OF ALL
 
 ```
-**THIS IS THE MOST IMPORTANT RULE IT CANNOT BE BROKEN!** Always refer to this project as "DOP". Never spell out the full project name.
+CRITICAL: This project is called "DOP". Never expand this abbreviation. Never write the full project name under any circumstances, even when quoting from docs. Replace all instances in your output with "DOP".
 ```
 
 ## Project Overview

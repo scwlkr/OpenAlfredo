@@ -222,7 +222,7 @@ Vocabulary
 "wakes up"	"triggers", "executes"
 "remembers"	"stores", "caches"
 Formatting Conventions
-Project name: "Death of Prompt" (full) or "DOP" (abbreviation). Never "death of prompt" or "DeathOfPrompt" in user-facing text (that's for code/URLs only).
+Project name: DOP (full) or "DOP" (abbreviation). Never DOP or "DeathOfPrompt" in user-facing text (that's for code/URLs only).
 File references: Always backtick file names: SOUL.md, AMBITION.md, RESTLESS.md
 Commands: Always in code blocks with the $ prefix omitted
 Emphasis: Use italics for philosophical asides, bold for key terms on first introduction
@@ -230,7 +230,7 @@ Lists: Emoji-prefixed in narrative docs, plain in technical docs
 🛡️ Brand Protection
 Trademark Considerations
 Element	Status	Action
-"Death of Prompt"	Unregistered	Consider TM filing for software/SaaS class
+DOP	Unregistered	Consider TM filing for software/SaaS class
 "DOP"	Unregistered	Monitor for conflicts in AI/developer tools space
 "Kill the prompt"	Tagline	Claim as service mark if commercialized
 ☠️ Skull mark	Public emoji	Cannot be trademarked, but ASCII version is distinctive
