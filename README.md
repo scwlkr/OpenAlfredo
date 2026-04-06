@@ -7,7 +7,7 @@
        |_|
 ```
 
-> Open memory. Ongoing conversation.
+> Better to serve, than be served...
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
 [![Node: 20+](https://img.shields.io/badge/Node-20%2B-blue.svg)](https://nodejs.org/)
