@@ -1,28 +1,34 @@
 {
   "name": "openalfredo",
-  "version": "1.0.0",
-  "description": "Local-first agent orchestration for persistent conversation, memory, and proactive work.",
-  "main": "index.js",
+  "version": "0.1.0",
+  "description": "Local-first persistent-agent prototype with continuous context and proactive follow-through.",
+  "main": "bin/oax.js",
   "bin": {
     "oax": "./bin/oax.js"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "bootstrap": "node bin/bootstrap.js",
+    "init": "node bin/bootstrap.js --force",
+    "postinstall": "node bin/bootstrap.js --check || true"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/scwlkr/OpenAlfredo.git"
   },
   "keywords": [
-    "agent",
-    "local-first",
     "ollama",
-    "nextjs",
-    "telegram"
+    "local-first",
+    "agent",
+    "llm",
+    "persistent-memory",
+    "telegram-bot"
   ],
-  "author": "",
-  "license": "ISC",
+  "author": "shanecwalker <shane.caleb.walker@gmail.com>",
+  "license": "MIT",
   "type": "commonjs",
+  "engines": {
+    "node": ">=20"
+  },
   "bugs": {
     "url": "https://github.com/scwlkr/OpenAlfredo/issues"
   },

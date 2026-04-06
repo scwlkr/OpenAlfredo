@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [20]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            oax-web/package-lock.json
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install oax-web dependencies
+        run: npm ci
+        working-directory: oax-web
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+        working-directory: oax-web
+
+      - name: Lint
+        run: npm run lint
+        working-directory: oax-web
+
+      - name: Run tests
+        run: npx vitest run
+        working-directory: oax-web
+
+      - name: Build
+        run: npx next build
+        working-directory: oax-web

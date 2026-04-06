@@ -1,15 +1,44 @@
-# Environment variables
+# ───── Environment & secrets ─────
 **/.env
+**/.env.local
+**/.env.*.local
+!**/.env.example
 
-# Node modules
-**/node_modules
-
-# Logs
-*/logs
-
-# OS generated files
-.DS_Store
-
-# Other
+# ───── Runtime state (private to each user) ─────
 oax-web/data/
-oax-web/data/.oax-api-key
+!oax-web/data/.gitkeep
+
+# Root-level legacy state (pre-migration fallback)
+/AMBITION.md
+/RESTLESS.md
+/SOUL.md
+/memory/
+/data/
+
+# ───── Build outputs ─────
+**/node_modules/
+**/.next/
+**/dist/
+**/build/
+**/*.tsbuildinfo
+
+# ───── Databases ─────
+**/*.db
+**/*.db-journal
+**/*.sqlite
+**/*.sqlite-*
+
+# ───── Logs ─────
+**/logs/
+**/*.log
+**/*.jsonl
+
+# ───── OS & editor ─────
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+
+# ───── Claude Code local config ─────
+.claude/settings.local.json
