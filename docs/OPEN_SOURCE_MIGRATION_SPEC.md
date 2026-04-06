@@ -26,29 +26,31 @@ Nothing destructive. All existing paths keep working for the current owner via a
 
 The following owner-private artifacts currently exist inside the tracked or tracked-adjacent tree. Each row states the current location, the risk, and the target state.
 
-| # | Artifact | Current path | Risk | Target state |
-|---|----------|--------------|------|--------------|
-| 1 | Agent identity | `oax-web/data/agents/default/SOUL.md` | Contains owner's name, beliefs, personal relationship framing | Ignored dir. Template `SOUL.example.md` ships instead. Bootstrap copies on first run. |
-| 2 | Stub SOUL at root | `SOUL.md` | Leftover from pre-unification | **Delete**. Documented as removed. |
-| 3 | Heartbeat log | `RESTLESS.md` (repo root) | Contains live LLM reflections referencing owner by name | Split: protocol/config → `docs/RESTLESS.md` (tracked, static). Log body → `data/RESTLESS.log.md` (ignored). |
-| 4 | Ambition list | `AMBITION.md` (repo root) | Tracked; contains owner's personal tasks ("laundry", etc.) | Move to `oax-web/data/AMBITION.md` (ignored). Ship `AMBITION.example.md` template. |
-| 5 | SQLite DB | `oax-web/data/oax.db` | All chat transcripts | Already under `oax-web/data/` (ignored). **Verify**. |
-| 6 | API key | `oax-web/data/.oax-api-key` | Auth secret | Already ignored. **Verify never committed** (history audit). |
-| 7 | Telegram bot token | `oax-web/.env` | Live secret | `.env` is ignored. Ship `.env.example`. **Rotate current token.** |
-| 8 | Telegram pairing code | `oax-web/data/.telegram-pairing-code` | Medium-sensitivity | Already ignored. |
-| 9 | Telegram allowlist | `oax-web/data/.telegram-allowlist.json` | Contains owner's Telegram chat id | Already ignored. |
-| 10 | Telegram chat id / models | `oax-web/data/.telegram-chat-id`, `.telegram-models.json` | Personal state | Already ignored. |
-| 11 | Keeper pairing code | `oax-web/data/.keeper-pairing-code` | Dead code path | Delete (keeper is deprecated per CLAUDE.md). |
-| 12 | Topic memory | `oax-web/data/memory/topics/*.md`, `index.json` | Personal notes | Already under ignored dir. Ship an empty template in `oax-web/data.example/`. |
-| 13 | Transcripts (legacy) | `memory/transcripts/` (repo root) | Stale pre-unification stubs | **Delete** entire root `memory/` dir. |
-| 14 | Logs | `oax-web/data/logs/*.jsonl`, `*.log` | Contains prompts and behavior | Already under ignored dir. |
-| 15 | Workspace files | `oax-web/data/workspace/` | Agent-written artifacts | Already under ignored dir. |
-| 16 | Pod state | `oax-web/data/.oax-pod.json` | Process PIDs | Already ignored. |
-| 17 | BRAND.md | `BRAND.md` | Contains phrase "Serve scwlkr" referencing owner | Scrub owner references, keep as public brand doc. |
-| 18 | Owner GitHub slug | `package.json`, `README.md` | Hardcoded `scwlkr/OpenAlfredo` | Acceptable for public repo (that IS the owner). Confirm slug is intentional. |
-| 19 | CLAUDE.md | Repo root | Currently tracked; references owner file paths but no secrets | Keep tracked (it IS the architecture doc). Gitignore entry is stale and should be removed. |
-| 20 | `.claude/settings.local.json` | `.claude/` | Owner's local Claude Code permissions | Add `.claude/settings.local.json` to `.gitignore`. Keep directory. |
-| 21 | `dev.db`, `test-ai.mjs`, `test-db.ts`, `test-usechat.js` | `oax-web/` | Dev scratch files | Audit for secrets, move to `oax-web/scripts/` or delete. |
+
+| #   | Artifact                                                 | Current path                                              | Risk                                                          | Target state                                                                                                |
+| --- | -------------------------------------------------------- | --------------------------------------------------------- | ------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| 1   | Agent identity                                           | `oax-web/data/agents/default/SOUL.md`                     | Contains owner's name, beliefs, personal relationship framing | Ignored dir. Template `SOUL.example.md` ships instead. Bootstrap copies on first run.                       |
+| 2   | Stub SOUL at root                                        | `SOUL.md`                                                 | Leftover from pre-unification                                 | **Delete**. Documented as removed.                                                                          |
+| 3   | Heartbeat log                                            | `RESTLESS.md` (repo root)                                 | Contains live LLM reflections referencing owner by name       | Split: protocol/config → `docs/RESTLESS.md` (tracked, static). Log body → `data/RESTLESS.log.md` (ignored). |
+| 4   | Ambition list                                            | `AMBITION.md` (repo root)                                 | Tracked; contains owner's personal tasks ("laundry", etc.)    | Move to `oax-web/data/AMBITION.md` (ignored). Ship `AMBITION.example.md` template.                          |
+| 5   | SQLite DB                                                | `oax-web/data/oax.db`                                     | All chat transcripts                                          | Already under `oax-web/data/` (ignored). **Verify**.                                                        |
+| 6   | API key                                                  | `oax-web/data/.oax-api-key`                               | Auth secret                                                   | Already ignored. **Verify never committed** (history audit).                                                |
+| 7   | Telegram bot token                                       | `oax-web/.env`                                            | Live secret                                                   | `.env` is ignored. Ship `.env.example`. **Rotate current token.**                                           |
+| 8   | Telegram pairing code                                    | `oax-web/data/.telegram-pairing-code`                     | Medium-sensitivity                                            | Already ignored.                                                                                            |
+| 9   | Telegram allowlist                                       | `oax-web/data/.telegram-allowlist.json`                   | Contains owner's Telegram chat id                             | Already ignored.                                                                                            |
+| 10  | Telegram chat id / models                                | `oax-web/data/.telegram-chat-id`, `.telegram-models.json` | Personal state                                                | Already ignored.                                                                                            |
+| 11  | Keeper pairing code                                      | `oax-web/data/.keeper-pairing-code`                       | Dead code path                                                | Delete (keeper is deprecated per CLAUDE.md).                                                                |
+| 12  | Topic memory                                             | `oax-web/data/memory/topics/*.md`, `index.json`           | Personal notes                                                | Already under ignored dir. Ship an empty template in `oax-web/data.example/`.                               |
+| 13  | Transcripts (legacy)                                     | `memory/transcripts/` (repo root)                         | Stale pre-unification stubs                                   | **Delete** entire root `memory/` dir.                                                                       |
+| 14  | Logs                                                     | `oax-web/data/logs/*.jsonl`, `*.log`                      | Contains prompts and behavior                                 | Already under ignored dir.                                                                                  |
+| 15  | Workspace files                                          | `oax-web/data/workspace/`                                 | Agent-written artifacts                                       | Already under ignored dir.                                                                                  |
+| 16  | Pod state                                                | `oax-web/data/.oax-pod.json`                              | Process PIDs                                                  | Already ignored.                                                                                            |
+| 17  | BRAND.md                                                 | `BRAND.md`                                                | Contains phrase "Serve scwlkr" referencing owner              | Scrub owner references, keep as public brand doc.                                                           |
+| 18  | Owner GitHub slug                                        | `package.json`, `README.md`                               | Hardcoded `scwlkr/OpenAlfredo`                                | Acceptable for public repo (that IS the owner). Confirm slug is intentional.                                |
+| 19  | CLAUDE.md                                                | Repo root                                                 | Currently tracked; references owner file paths but no secrets | Keep tracked (it IS the architecture doc). Gitignore entry is stale and should be removed.                  |
+| 20  | `.claude/settings.local.json`                            | `.claude/`                                                | Owner's local Claude Code permissions                         | Add `.claude/settings.local.json` to `.gitignore`. Keep directory.                                          |
+| 21  | `dev.db`, `test-ai.mjs`, `test-db.ts`, `test-usechat.js` | `oax-web/`                                                | Dev scratch files                                             | Audit for secrets, move to `oax-web/scripts/` or delete.                                                    |
+
 
 **Action items this audit produces**: rows 1–4, 11, 13, 17, 19, 20, 21 require code/filesystem changes. Rows 5–10, 12, 14–16, 18 require **verification only**.
 
@@ -104,6 +106,7 @@ OpenAlfredo/
 ```
 
 ### Files being **deleted**
+
 - `SOUL.md` (root) — stale stub
 - `memory/` (root) — stale stubs, entire directory
 - `RESTLESS.md` (root) — replaced by `docs/RESTLESS.md` + runtime `data/RESTLESS.log.md`
@@ -142,6 +145,7 @@ export const LOGS_DIR = path.join(DATA_ROOT, 'logs');
 All current string literals that point to `AMBITION.md`, `RESTLESS.md`, `data/agents/…` should be replaced with imports from `src/lib/paths.ts`.
 
 **Files to audit & update**:
+
 - `oax-web/src/lib/ambition.ts`
 - `oax-web/src/lib/oax.ts` (heartbeat log writer, SOUL reader)
 - `oax-web/src/lib/oax-engine.ts` (SOUL reader, workspace writer)
@@ -170,6 +174,7 @@ Audit `REPO_ROOT` resolution and the blocked-paths list. Ensure `oax-web/data/`,
 Purpose: idempotent first-run initializer that converts a fresh clone into a working local agent.
 
 ### 4.1 Contract
+
 - **Pre-condition**: fresh clone OR existing install. Must be safe to re-run.
 - **Post-condition**: `oax-web/data/` is populated with owner-private state. No existing files are overwritten unless `--force` is passed.
 - **Idempotency**: each step checks "does this file already exist? if yes, skip." No errors if run twice.
@@ -178,32 +183,31 @@ Purpose: idempotent first-run initializer that converts a fresh clone into a wor
 
 1. **Sanity checks**: Node ≥ 20, `oax-web/` present, repo root detected.
 2. **Create `oax-web/data/` subtree** if missing:
-   - `agents/default/`
-   - `memory/topics/`
-   - `workspace/`
-   - `logs/`
+  - `agents/default/`
+  - `memory/topics/`
+  - `workspace/`
+  - `logs/`
 3. **Copy templates if missing**:
-   - `examples/SOUL.example.md` → `oax-web/data/agents/default/SOUL.md`
-   - `examples/AMBITION.example.md` → `oax-web/data/AMBITION.md`
-   - Empty heartbeat log → `oax-web/data/RESTLESS.log.md`
-   - `{}` → `oax-web/data/memory/index.json`
+  - `examples/SOUL.example.md` → `oax-web/data/agents/default/SOUL.md`
+  - `examples/AMBITION.example.md` → `oax-web/data/AMBITION.md`
+  - Empty heartbeat log → `oax-web/data/RESTLESS.log.md`
+  - `{}` → `oax-web/data/memory/index.json`
 4. **Copy `.env.example` → `.env`** if missing (both root and `oax-web/`).
 5. **Prisma setup**: `cd oax-web && npx prisma generate && npx prisma db push` (wrapped with existence check on `oax-web/data/oax.db`).
 6. **Generate API key**: if `oax-web/data/.oax-api-key` is missing, write a 32-byte `crypto.randomBytes` hex string. Set file mode `0600`.
 7. **Print next-steps banner**:
-   ```
+  ```
    ✓ OAX is ready.
 
    Next:
-     1. Make sure Ollama is running:   ollama serve
-     2. Pull a model:                  ollama pull llama3
-     3. Start the pod:                 oax pod
-
-   Optional (Telegram):
-     4. Edit oax-web/.env and set TELEGRAM_TOKEN
-     5. Restart with: oax pod
-     6. Pair your phone: send /pair <code from terminal> to your bot
-   ```
+  ```
+  1. Make sure Ollama is running:   ollama serve
+  2. Pull a model:                  ollama pull llama3
+  3. Start the pod:                 oax pod
+    onal (Telegram):
+  4. Edit oax-web/.env and set TELEGRAM_TOKEN
+  5. Restart with: oax pod
+  6. Pair your phone: send /pair  to your bot
 
 ### 4.3 Wiring
 
@@ -265,6 +269,7 @@ Thumbs.db
 ```
 
 **Removed** entries from current `.gitignore`:
+
 - `CLAUDE.md` (it IS the architecture doc — should be tracked)
 - `oax-web/data/.oax-api-key` (covered by broader `oax-web/data/` rule)
 
@@ -317,7 +322,7 @@ Current README reads as a personal journal. Rewrite to Divio's "tutorial + refer
 2. **What is this?** — 3 sentences. The problem (amnesiac prompts), the thesis (persistent relationship), the shape (local, Ollama, web + Telegram).
 3. **Demo** — animated GIF or screenshot of the web UI. Link to short video if available.
 4. **Quick Start** (≤ 6 commands, under 2 minutes):
-   ```bash
+  ```bash
    # Prerequisites: Node 20+, Ollama running locally
    ollama pull llama3
    git clone https://github.com/scwlkr/OpenAlfredo.git
@@ -327,7 +332,7 @@ Current README reads as a personal journal. Rewrite to Divio's "tutorial + refer
    npm link              # installs `oax` CLI globally (optional)
    oax pod               # starts web UI + daemon
    # → open http://localhost:3000
-   ```
+  ```
 5. **Architecture (one paragraph + link)** → `docs/ARCHITECTURE.md`.
 6. **Telegram setup (optional)** → `docs/TELEGRAM_SETUP.md`.
 7. **Customization** — pointing to `examples/SOUL.example.md` and how to write your agent's identity.
@@ -342,15 +347,19 @@ Current README reads as a personal journal. Rewrite to Divio's "tutorial + refer
 ## 8. New Docs (Deliverables)
 
 ### 8.1 `docs/ARCHITECTURE.md`
+
 Public version of `CLAUDE.md`. Same content, but:
+
 - Framed for contributors, not Claude.
 - Diagrams (Mermaid) for: (a) request flow web → engine → Ollama, (b) 3-layer memory retrieval, (c) daemon cron loops, (d) pod process tree.
 - Explicit section on extension points: adding a new marker, adding a new retrieval layer, swapping the LLM provider.
 
 ### 8.2 `docs/TELEGRAM_SETUP.md`
+
 Walkthrough: @BotFather → token → `.env` → `oax pod` → `/pair` → first message. Include screenshots. Explain pairing-code rotation.
 
 ### 8.3 `docs/SECURITY.md`
+
 - Where secrets live (`oax-web/.env`, `oax-web/data/.oax-api-key`).
 - How to rotate the API key (delete file, restart).
 - How to rotate the Telegram token (BotFather → revoke → new token → `.env` → restart).
@@ -359,6 +368,7 @@ Walkthrough: @BotFather → token → `.env` → `oax pod` → `/pair` → first
 - Link to `CODE_OF_CONDUCT.md`.
 
 ### 8.4 `CONTRIBUTING.md`
+
 - Dev setup (same as README Quick Start + `npm run lint`, `npx vitest`).
 - Branch naming, conventional commits, PR template.
 - Code style (ESLint, Prettier config — add if missing).
@@ -367,18 +377,23 @@ Walkthrough: @BotFather → token → `.env` → `oax pod` → `/pair` → first
 - How to propose a new marker or memory layer.
 
 ### 8.5 `CODE_OF_CONDUCT.md`
+
 Drop-in Contributor Covenant 2.1. Enforcement email = owner's.
 
 ### 8.6 `.github/ISSUE_TEMPLATE/bug_report.yml`
+
 Form-style issue template: reproduction steps, expected, actual, Ollama version, Node version, OS, model used, log excerpt.
 
 ### 8.7 `.github/ISSUE_TEMPLATE/feature_request.yml`
+
 Form: problem, proposal, alternatives, marker/engine impact.
 
 ### 8.8 `.github/PULL_REQUEST_TEMPLATE.md`
+
 Checklist: tests pass, docs updated, no new owner-private paths, no `[[SELF_MOD]]` artifacts committed.
 
 ### 8.9 `.github/workflows/ci.yml`
+
 On push/PR to `main`: checkout → setup Node 20 → `npm ci` in root and `oax-web/` → `npm run lint` → `npx vitest run` → `next build` (oax-web). No Ollama required (mock the provider in tests; confirm existing tests already do this).
 
 ---
@@ -457,6 +472,7 @@ OAX_MODEL="llama3"
 ## 10. BRAND.md Scrub
 
 Search-and-replace in `BRAND.md`:
+
 - `Serve scwlkr` → `Serve its one user`
 - Any reference to specific owner beliefs, name, or relationship → genericize.
 - Use the new tagline: "Open memory. Ongoing conversation."
@@ -505,25 +521,25 @@ If any hit surfaces a secret: use `git filter-repo` (not `filter-branch`) to scr
 
 Run in order. Do not skip.
 
-- [ ] §11 migration script executed, verified, deleted.
-- [ ] `.gitignore` replaced per §5.
-- [ ] All code paths use `src/lib/paths.ts` constants (§3.1).
-- [ ] `bin/bootstrap.js` exists, idempotent, and tested on a fresh clone in a scratch dir.
-- [ ] `npm install` from clean clone produces a working `oax pod`.
-- [ ] `examples/` directory populated (§9).
-- [ ] `docs/ARCHITECTURE.md`, `docs/TELEGRAM_SETUP.md`, `docs/SECURITY.md` written.
-- [ ] `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, issue/PR templates written.
-- [ ] `README.md` rewritten per §7.
-- [ ] `BRAND.md` scrubbed.
-- [ ] `package.json` fields populated (§6).
-- [ ] `LICENSE` matches `package.json` license field.
-- [ ] GitHub Actions CI green on a test PR.
-- [ ] `git log --all` audit run (§12). Telegram token rotated.
-- [ ] Vitest passes on clean clone: `cd oax-web && npx vitest run`.
-- [ ] `next build` passes on clean clone.
-- [ ] Self-modification blocklist verified (`data/`, `.env`, `.git/`, `node_modules/`, `.next/`, `.db`).
-- [ ] `oax pod` → web UI loads → onboarding completes → first chat works → `[[TASK: …]]` appends to `oax-web/data/AMBITION.md` → heartbeat tick logs to `oax-web/data/RESTLESS.log.md`.
-- [ ] **Repo set to public** on GitHub.
+- §11 migration script executed, verified, deleted.
+- `.gitignore` replaced per §5.
+- All code paths use `src/lib/paths.ts` constants (§3.1).
+- `bin/bootstrap.js` exists, idempotent, and tested on a fresh clone in a scratch dir.
+- `npm install` from clean clone produces a working `oax pod`.
+- `examples/` directory populated (§9).
+- `docs/ARCHITECTURE.md`, `docs/TELEGRAM_SETUP.md`, `docs/SECURITY.md` written.
+- `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, issue/PR templates written.
+- `README.md` rewritten per §7.
+- `BRAND.md` scrubbed.
+- `package.json` fields populated (§6).
+- `LICENSE` matches `package.json` license field.
+- GitHub Actions CI green on a test PR.
+- `git log --all` audit run (§12). Telegram token rotated.
+- Vitest passes on clean clone: `cd oax-web && npx vitest run`.
+- `next build` passes on clean clone.
+- Self-modification blocklist verified (`data/`, `.env`, `.git/`, `node_modules/`, `.next/`, `.db`).
+- `oax pod` → web UI loads → onboarding completes → first chat works → `[[TASK: …]]` appends to `oax-web/data/AMBITION.md` → heartbeat tick logs to `oax-web/data/RESTLESS.log.md`.
+- **Repo set to public** on GitHub.
 
 ---
 
