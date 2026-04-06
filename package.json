@@ -1,26 +1,32 @@
 {
-  "name": "deathofprompt",
+  "name": "openalfredo",
   "version": "1.0.0",
-  "description": "_Hello, this is Death of Prompt._",
+  "description": "Local-first agent orchestration for persistent conversation, memory, and proactive work.",
   "main": "index.js",
   "bin": {
-    "dop": "./bin/dop.js"
+    "oax": "./bin/oax.js"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/scwlkr/DeathOfPrompt.git"
+    "url": "git+https://github.com/scwlkr/OpenAlfredo.git"
   },
-  "keywords": [],
+  "keywords": [
+    "agent",
+    "local-first",
+    "ollama",
+    "nextjs",
+    "telegram"
+  ],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "bugs": {
-    "url": "https://github.com/scwlkr/DeathOfPrompt/issues"
+    "url": "https://github.com/scwlkr/OpenAlfredo/issues"
   },
-  "homepage": "https://github.com/scwlkr/DeathOfPrompt#readme",
+  "homepage": "https://github.com/scwlkr/OpenAlfredo#readme",
   "dependencies": {
     "open": "^11.0.0",
     "yargs": "^18.0.0"

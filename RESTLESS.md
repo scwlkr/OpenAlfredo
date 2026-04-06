@@ -12,7 +12,7 @@ This is the agent's heartbeat. Between user messages, the agent is not idle — 
 - **Max log entries retained:** 50 (older ticks are trimmed from the log below)
 - **Active:** true
 
-To change the cadence, set `HEARTBEAT_CRON` in `dop-web/.env` (any valid node-cron expression). To disable the heartbeat entirely, set `HEARTBEAT_ACTIVE=false`.
+To change the cadence, set `HEARTBEAT_CRON` in `oax-web/.env` (any valid node-cron expression). To disable the heartbeat entirely, set `HEARTBEAT_ACTIVE=false`.
 
 ## Heartbeat Protocol
 

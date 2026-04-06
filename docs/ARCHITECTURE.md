@@ -1,16 +1,16 @@
 # Architecture
 
-> Public architecture reference for Death of Prompt. If you're here to
+> Public architecture reference for OpenAlfredo. If you're here to
 > contribute, this is your map.
 
-DOP is a two-package repo:
+OAX is a two-package repo:
 
-- **`/`** (root) — the `dop` CLI wrapper (CommonJS, yargs) that starts the
-  full stack. Entry: `bin/dop.js`.
-- **`/dop-web`** — the actual application: Next.js 14 App Router, Prisma +
+- **`/`** (root) — the `oax` CLI wrapper (CommonJS, yargs) that starts the
+  full stack. Entry: `bin/oax.js`.
+- **`/oax-web`** — the actual application: Next.js 14 App Router, Prisma +
   SQLite, Ollama provider. All real work happens here.
 
-Run from the right cwd: npm scripts assume `dop-web/` unless stated
+Run from the right cwd: npm scripts assume `oax-web/` unless stated
 otherwise.
 
 ---
@@ -20,10 +20,10 @@ otherwise.
 ```mermaid
 flowchart LR
   U[Browser / useChat] -->|POST /api/chat| R[Next route handler]
-  R -->|processChat| E[dop-engine.ts]
+  R -->|processChat| E[oax-engine.ts]
   E -->|retrieveContext| M[memory-retrieval.ts]
-  M -->|SOUL.md| F1[(dop-web/data/agents/default/SOUL.md)]
-  M -->|topic files| F2[(dop-web/data/memory/topics/*.md)]
+  M -->|SOUL.md| F1[(oax-web/data/agents/default/SOUL.md)]
+  M -->|topic files| F2[(oax-web/data/memory/topics/*.md)]
   M -->|last 10 turns| DB[(SQLite via Prisma)]
   E -->|streamText| O[Ollama]
   E -->|handleMarkers| SE[self-edit.ts + ambition.ts + workspace.ts]
@@ -32,7 +32,7 @@ flowchart LR
 ```
 
 Both surfaces — the web UI and the Telegram bot — share **one engine**:
-`src/lib/dop-engine.ts`. The engine owns session upsert, context retrieval,
+`src/lib/oax-engine.ts`. The engine owns session upsert, context retrieval,
 system-prompt construction, marker handling (TASK, SAVE_FILE, READ_FILE,
 EDIT_FILE, WRITE_FILE, RESTART_POD), and transcript persistence.
 
@@ -62,14 +62,14 @@ flowchart TD
   S --> P[system prompt]
 ```
 
-1. **SOUL** — `dop-web/data/agents/<agentId>/SOUL.md`. Written by the
+1. **SOUL** — `oax-web/data/agents/<agentId>/SOUL.md`. Written by the
    onboarding flow. Always prepended.
-2. **Topics** — `dop-web/data/memory/topics/*.md`, selected via naive
-   keyword match against `dop-web/data/memory/index.json`. Store via
+2. **Topics** — `oax-web/data/memory/topics/*.md`, selected via naive
+   keyword match against `oax-web/data/memory/index.json`. Store via
    `saveTopic()`.
 3. **Transcripts** — last 10 `TranscriptEntry` rows for the session.
 
-All retrievals log to `dop-web/data/logs/dop-<date>.jsonl` via
+All retrievals log to `oax-web/data/logs/oax-<date>.jsonl` via
 `src/lib/logger.ts`.
 
 ---
@@ -101,17 +101,17 @@ flowchart LR
 
 ```mermaid
 flowchart TD
-  dop[dop pod] -->|detached| ollama[ollama serve<br/>:11434]
-  dop -->|detached| web[next dev<br/>:3000]
-  dop -->|detached| daemon[npx tsx daemon.ts]
-  state[(data/.dop-pod.json)] -.tracks.-> ollama
+  oax[oax pod] -->|detached| ollama[ollama serve<br/>:11434]
+  oax -->|detached| web[next dev<br/>:3000]
+  oax -->|detached| daemon[npx tsx daemon.ts]
+  state[(data/.oax-pod.json)] -.tracks.-> ollama
   state -.tracks.-> web
   state -.tracks.-> daemon
 ```
 
-`bin/dop.js` spawns all three detached, streams logs (`[ollama] [web]
-[daemon]` prefixes) to stdout + mirrors to `dop-web/data/logs/pod-*.log`,
-and writes a PID manifest to `dop-web/data/.dop-pod.json`. `dop pod stop`
+`bin/oax.js` spawns all three detached, streams logs (`[ollama] [web]
+[daemon]` prefixes) to stdout + mirrors to `oax-web/data/logs/pod-*.log`,
+and writes a PID manifest to `oax-web/data/.oax-pod.json`. `oax pod stop`
 SIGTERMs each process group (then SIGKILL sweep).
 
 ---
@@ -120,7 +120,7 @@ SIGTERMs each process group (then SIGKILL sweep).
 
 **Add a new marker** (e.g. `[[EMAIL: …]]`):
 1. Write the parser/handler in a new module under `src/lib/`.
-2. Import in `dop-engine.ts::handleMarkers()` — parse, side-effect, strip.
+2. Import in `oax-engine.ts::handleMarkers()` — parse, side-effect, strip.
 3. Document the marker in the system prompt (`buildSystemPrompt()`).
 4. Add a test under `src/lib/__tests__/`.
 
@@ -130,9 +130,9 @@ SIGTERMs each process group (then SIGKILL sweep).
 3. Log via `logInfo('context_retrieved', …)`.
 
 **Swap the LLM provider** (e.g. OpenAI, local llama.cpp, etc.):
-1. `dop-engine.ts` imports from `ai-sdk-ollama`. Replace with another
+1. `oax-engine.ts` imports from `ai-sdk-ollama`. Replace with another
    provider that exposes a `LanguageModel` compatible with `ai` SDK v6.
-2. Update `src/lib/dop.ts::runHeartbeat()` which currently calls
+2. Update `src/lib/oax.ts::runHeartbeat()` which currently calls
    `ollama.generate` directly.
 3. Update `/api/models` route to list models from the new provider.
 
@@ -142,7 +142,7 @@ SIGTERMs each process group (then SIGKILL sweep).
 
 The agent can mutate its own source via markers in its replies. Scoped to
 `REPO_ROOT`. Blocked: `.git/`, `node_modules/`, `.next/`, `data/`,
-`dop-web/data/`, `.env`, `.db`/`.sqlite*`.
+`oax-web/data/`, `.env`, `.db`/`.sqlite*`.
 
 | Marker | Shape |
 |---|---|
@@ -159,17 +159,17 @@ appear stripped in the reply — the user re-prompts.
 
 ## Paths — single source of truth
 
-All mutable-state paths live in `dop-web/src/lib/paths.ts`:
+All mutable-state paths live in `oax-web/src/lib/paths.ts`:
 
 ```ts
-DATA_ROOT            = dop-web/data/
+DATA_ROOT            = oax-web/data/
 AMBITION_PATH        = data/AMBITION.md
 RESTLESS_LOG_PATH    = data/RESTLESS.log.md
 AGENTS_DIR           = data/agents/
 MEMORY_DIR           = data/memory/
 WORKSPACE_DIR        = data/workspace/
 LOGS_DIR             = data/logs/
-API_KEY_FILE         = data/.dop-api-key
+API_KEY_FILE         = data/.oax-api-key
 DEFAULT_SOUL_PATH    = data/agents/default/SOUL.md
 ```
 
@@ -179,22 +179,22 @@ Don't hardcode string literals for state paths. Import from `paths.ts`.
 
 ## Tests
 
-Vitest under `dop-web/src/lib/__tests__/`. No Ollama required — tests mock
+Vitest under `oax-web/src/lib/__tests__/`. No Ollama required — tests mock
 the provider. Run with `npx vitest run`.
 
 ---
 
 ## Prisma
 
-Schema: `dop-web/prisma/schema.prisma`. Two models: `ChatSession` and
-`TranscriptEntry`. SQLite at `dop-web/data/dop.db` via
-`DATABASE_URL="file:./data/dop.db"` (relative to `dop-web/`).
+Schema: `oax-web/prisma/schema.prisma`. Two models: `ChatSession` and
+`TranscriptEntry`. SQLite at `oax-web/data/oax.db` via
+`DATABASE_URL="file:./data/oax.db"` (relative to `oax-web/`).
 
 Prisma client is a singleton (`src/lib/db.ts`) to avoid connection
 exhaustion in Next dev hot-reload.
 
 ---
 
-Further reading: `DOP_MVP_PLAN.md` (design intent), `DOP_IDEAS_FROM_CODEX.md`
-(exploratory), `docs/SELF_MOD_TEST_PROMPTS.md` (tested prompts),
+Further reading: `OAX_MVP_PLAN.md` (design intent),
+`docs/SELF_MOD_TEST_PROMPTS.md` (tested prompts),
 `docs/RESTLESS.md` (heartbeat protocol), `docs/SECURITY.md` (threat model).

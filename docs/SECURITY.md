@@ -1,6 +1,6 @@
 # Security
 
-DOP is a local-first single-user prototype. This document describes where
+OAX is a local-first single-user prototype. This document describes where
 secrets live, how to rotate them, what the self-modification blocklist
 covers, and how to report vulnerabilities.
 
@@ -8,19 +8,19 @@ covers, and how to report vulnerabilities.
 
 | Secret | Location | Rotate by |
 |---|---|---|
-| API key (web API auth) | `dop-web/data/.dop-api-key` (mode 0600, gitignored) | delete file, restart — auto-regenerates |
-| Telegram bot token | `dop-web/.env` (gitignored) | @BotFather revoke + new token + restart |
-| Telegram pairing code | `dop-web/data/.telegram-pairing-code` (gitignored) | delete file, restart daemon |
-| Telegram allowlist | `dop-web/data/.telegram-allowlist.json` (gitignored) | edit file or `/unpair` |
+| API key (web API auth) | `oax-web/data/.oax-api-key` (mode 0600, gitignored) | delete file, restart — auto-regenerates |
+| Telegram bot token | `oax-web/.env` (gitignored) | @BotFather revoke + new token + restart |
+| Telegram pairing code | `oax-web/data/.telegram-pairing-code` (gitignored) | delete file, restart daemon |
+| Telegram allowlist | `oax-web/data/.telegram-allowlist.json` (gitignored) | edit file or `/unpair` |
 
 Nothing listed above should ever be committed. `.gitignore` blocks
-`dop-web/data/` and all `.env` files (except `.env.example`).
+`oax-web/data/` and all `.env` files (except `.env.example`).
 
 ## Rotating the API key
 
 ```bash
-rm dop-web/data/.dop-api-key
-dop pod stop && dop pod   # regenerates on next boot
+rm oax-web/data/.oax-api-key
+oax pod stop && oax pod   # regenerates on next boot
 ```
 
 A new 32-byte hex key is written with mode 0600.
@@ -30,8 +30,8 @@ A new 32-byte hex key is written with mode 0600.
 1. In Telegram, message @BotFather.
 2. `/revoke` → select bot → confirm.
 3. Receive new token.
-4. Edit `dop-web/.env`: `TELEGRAM_TOKEN=<new>`.
-5. `dop pod stop && dop pod`.
+4. Edit `oax-web/.env`: `TELEGRAM_TOKEN=<new>`.
+5. `oax pod stop && oax pod`.
 
 ## Self-modification blocklist
 
@@ -47,7 +47,7 @@ and subject to a hard blocklist.
 
 **Blocked as path prefixes**:
 
-- `dop-web/data/` (all runtime state)
+- `oax-web/data/` (all runtime state)
 - `data/` (legacy repo-root state)
 
 **Blocked by extension**:
@@ -58,11 +58,11 @@ and subject to a hard blocklist.
 **Implicitly blocked** (not in the code index, so the agent doesn't know to
 try):
 
-- `dop-web/.env` (live secrets)
+- `oax-web/.env` (live secrets)
 - Anything outside `REPO_ROOT`
 
-Blocklist logic: `dop-web/src/lib/self-edit.ts::resolveInsideRepo()`.
-Tests: `dop-web/src/lib/__tests__/self-edit.test.ts`.
+Blocklist logic: `oax-web/src/lib/self-edit.ts::resolveInsideRepo()`.
+Tests: `oax-web/src/lib/__tests__/self-edit.test.ts`.
 
 ## Pairing rate limit
 
@@ -74,7 +74,7 @@ brute-forcing the 6-digit code across restarts.
 
 - Ollama runs on `localhost:11434` only.
 - Next dev server binds to `127.0.0.1:3000` only.
-- Nothing phones home. DOP has no telemetry, analytics, or crash
+- Nothing phones home. OAX has no telemetry, analytics, or crash
   reporting.
 
 ## Responsible disclosure

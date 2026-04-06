@@ -1,0 +1,39 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --oax-paper: #f4eedf;
+  --oax-shell: #fffaf1;
+  --oax-ink: #171512;
+  --oax-basil: #2f6b4f;
+  --oax-basil-strong: #254f3c;
+  --oax-brass: #b98a3d;
+  --oax-sage: #8fa08e;
+  --oax-muted: #666257;
+  --oax-edge: #d7cab3;
+  --oax-shadow: rgba(23, 21, 18, 0.18);
+  --background: var(--oax-paper);
+  --foreground: var(--oax-ink);
+}
+
+body {
+  color: var(--foreground);
+  background:
+    radial-gradient(circle at top left, rgba(185, 138, 61, 0.14), transparent 26%),
+    radial-gradient(circle at top right, rgba(47, 107, 79, 0.12), transparent 22%),
+    linear-gradient(180deg, #fbf6ea 0%, var(--oax-paper) 42%, #efe6d5 100%);
+  font-family: var(--font-geist-sans), "Avenir Next", "Segoe UI", sans-serif;
+  min-height: 100vh;
+}
+
+::selection {
+  background: rgba(47, 107, 79, 0.18);
+  color: var(--oax-ink);
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}

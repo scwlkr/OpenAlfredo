@@ -1,15 +1,7 @@
-# CLAUDE.md
+# AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Codex (Codex.ai/code) when working with code in this repository.
 
-## Canonical Naming
-
-Use the new naming system consistently:
-
-- Full product name: `OpenAlfredo`
-- Technical abbreviation: `OAX`
-- CLI command: `oax`
-- App package directory: `oax-web`
 
 ## Project Overview
 

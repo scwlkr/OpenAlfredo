@@ -11,5 +11,5 @@
 .DS_Store
 
 # Other
-dop-web/data/
-dop-web/data/.dop-api-key
+oax-web/data/
+oax-web/data/.oax-api-key

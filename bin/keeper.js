@@ -1,21 +1,21 @@
 #!/usr/bin/env node
-// DOP Keeper — a tiny standalone Telegram bot that lives OUTSIDE the pod.
-// Its only job is to start, stop, and status-check the DOP pod remotely.
+// OAX Keeper — a tiny standalone Telegram bot that lives OUTSIDE the pod.
+// Its only job is to start, stop, and status-check the OAX pod remotely.
 // Run it once from a persistent location (nohup, launchd, tmux) so it
-// survives `dop pod stop` and can bring the pod back up on command.
+// survives `oax pod stop` and can bring the pod back up on command.
 //
 // Commands (paired chats only):
 //   /keepPair <code>    — pair this chat
 //   /keepUnpair         — disconnect this chat
-//   /podStart           — `dop pod` (detached)
-//   /podStop            — `dop pod stop`
-//   /podStatus          — `dop pod status`
+//   /podStart           — `oax pod` (detached)
+//   /podStop            — `oax pod stop`
+//   /podStatus          — `oax pod status`
 //
 // Telegram commands stop at whitespace/dashes so camelCase is mandatory —
 // `/keep-pair` gets parsed as `/keep` and loses the argument.
 //
 // The keeper has its own pairing code and allowlist, separate from the
-// daemon's. State lives in dop-web/data/.keeper-*.
+// daemon's. State lives in oax-web/data/.keeper-*.
 
 const path = require('path');
 const fs = require('fs');
@@ -23,16 +23,16 @@ const crypto = require('crypto');
 const { spawn, execFile } = require('child_process');
 
 const REPO_ROOT = path.join(__dirname, '..');
-const DATA_DIR = path.join(REPO_ROOT, 'dop-web', 'data');
+const DATA_DIR = path.join(REPO_ROOT, 'oax-web', 'data');
 const PAIRING_FILE = path.join(DATA_DIR, '.keeper-pairing-code');
 const ALLOWLIST_FILE = path.join(DATA_DIR, '.keeper-allowlist.json');
-const DOP_BIN = path.join(__dirname, 'dop.js');
+const OAX_BIN = path.join(__dirname, 'oax.js');
 
-// Read TELEGRAM_TOKEN from dop-web/.env so the keeper reuses the same bot.
+// Read TELEGRAM_TOKEN from oax-web/.env so the keeper reuses the same bot.
 function loadEnvToken() {
   if (process.env.TELEGRAM_TOKEN) return process.env.TELEGRAM_TOKEN;
   try {
-    const env = fs.readFileSync(path.join(REPO_ROOT, 'dop-web', '.env'), 'utf-8');
+    const env = fs.readFileSync(path.join(REPO_ROOT, 'oax-web', '.env'), 'utf-8');
     const m = env.match(/^TELEGRAM_TOKEN\s*=\s*(.+)$/m);
     if (m) return m[1].trim().replace(/^["']|["']$/g, '');
   } catch {}
@@ -41,12 +41,12 @@ function loadEnvToken() {
 
 const TELEGRAM_TOKEN = loadEnvToken();
 if (!TELEGRAM_TOKEN) {
-  console.error('❌ No TELEGRAM_TOKEN found (checked env + dop-web/.env).');
+  console.error('❌ No TELEGRAM_TOKEN found (checked env + oax-web/.env).');
   process.exit(1);
 }
 
-// node-telegram-bot-api lives in dop-web/node_modules — require from there.
-const TelegramBot = require(path.join(REPO_ROOT, 'dop-web', 'node_modules', 'node-telegram-bot-api'));
+// node-telegram-bot-api lives in oax-web/node_modules — require from there.
+const TelegramBot = require(path.join(REPO_ROOT, 'oax-web', 'node_modules', 'node-telegram-bot-api'));
 
 function loadAllowlist() {
   try {
@@ -94,7 +94,7 @@ function clearKeeperAttempts(id) {
 const allowlist = loadAllowlist();
 const PAIRING_CODE = loadOrCreateCode();
 
-console.log('🛡️  DOP Keeper starting.');
+console.log('🛡️  OAX Keeper starting.');
 console.log('   Pairing code: ' + PAIRING_CODE);
 console.log('   In Telegram: /keepPair ' + PAIRING_CODE);
 console.log('   Paired chats: ' + (allowlist.size || 'none yet'));
@@ -147,7 +147,7 @@ bot.onText(/^\/keepUnpair\b/i, (msg) => {
 });
 
 function runDop(args, onDone) {
-  execFile('node', [DOP_BIN, ...args], { cwd: REPO_ROOT }, (err, stdout, stderr) => {
+  execFile('node', [OAX_BIN, ...args], { cwd: REPO_ROOT }, (err, stdout, stderr) => {
     onDone((stdout || '') + (stderr || '') + (err ? `\n[exit ${err.code}]` : ''));
   });
 }
@@ -157,8 +157,8 @@ bot.onText(/^\/podStart\b/i, (msg) => {
   if (!isPaired(id)) return needPair(id);
   bot.sendMessage(id, '🚀 Starting pod...');
   // Start the pod detached so it runs independently of the keeper. Logs
-  // still land in dop-web/data/logs/pod-*.log.
-  const p = spawn('node', [DOP_BIN, 'pod'], {
+  // still land in oax-web/data/logs/pod-*.log.
+  const p = spawn('node', [OAX_BIN, 'pod'], {
     cwd: REPO_ROOT,
     detached: true,
     stdio: 'ignore',

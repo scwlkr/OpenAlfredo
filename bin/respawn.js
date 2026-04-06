@@ -1,16 +1,16 @@
 #!/usr/bin/env node
-// DOP Respawn — detached helper that restarts the pod.
+// OAX Respawn — detached helper that restarts the pod.
 //
 // Invoked by the daemon (or any engine path) when the agent self-edits code
 // and needs a restart for changes to take effect. MUST be spawned detached
-// so it outlives the daemon's process group when `dop pod stop` kills it.
+// so it outlives the daemon's process group when `oax pod stop` kills it.
 //
 // Sequence:
 //   1. Wait 3s (let the daemon's farewell message send + process exit cleanly)
-//   2. `dop pod stop`  (SIGTERM+SIGKILL sweep, ~3s of its own)
-//   3. `dop pod`       (detached — ollama + next + daemon come back up)
+//   2. `oax pod stop`  (SIGTERM+SIGKILL sweep, ~3s of its own)
+//   3. `oax pod`       (detached — ollama + next + daemon come back up)
 //   4. Poll PID file up to 60s to confirm pod is alive
-//   5. Append outcome to dop-web/data/logs/respawn.log
+//   5. Append outcome to oax-web/data/logs/respawn.log
 //
 // Usage:  node bin/respawn.js [--delay=3] [--timeout=60]
 
@@ -19,9 +19,9 @@ const fs = require('fs');
 const { spawn } = require('child_process');
 
 const REPO_ROOT = path.join(__dirname, '..');
-const DOP_BIN = path.join(__dirname, 'dop.js');
-const PID_FILE = path.join(REPO_ROOT, 'dop-web', 'data', '.dop-pod.json');
-const LOG_FILE = path.join(REPO_ROOT, 'dop-web', 'data', 'logs', 'respawn.log');
+const OAX_BIN = path.join(__dirname, 'oax.js');
+const PID_FILE = path.join(REPO_ROOT, 'oax-web', 'data', '.oax-pod.json');
+const LOG_FILE = path.join(REPO_ROOT, 'oax-web', 'data', 'logs', 'respawn.log');
 
 const args = process.argv.slice(2);
 const KNOWN_FLAGS = ['--delay=', '--timeout=', '--dry-run', '--help', '-h'];
@@ -68,7 +68,7 @@ function isAlive(pid) {
 
 function runDop(args) {
   return new Promise((resolve) => {
-    const child = spawn('node', [DOP_BIN, ...args], { cwd: REPO_ROOT });
+    const child = spawn('node', [OAX_BIN, ...args], { cwd: REPO_ROOT });
     let out = '';
     child.stdout.on('data', (d) => (out += d.toString()));
     child.stderr.on('data', (d) => (out += d.toString()));
@@ -121,18 +121,18 @@ async function waitForPodHealthy() {
   }
   await sleep(DELAY_S * 1000);
 
-  log('respawn: calling `dop pod stop`');
+  log('respawn: calling `oax pod stop`');
   const stop = await runDop(['pod', 'stop']);
   log(`respawn: pod stop exit=${stop.code}`);
 
   // Small breather so ports release cleanly.
   await sleep(1000);
 
-  log('respawn: spawning `dop pod` (detached)');
-  const podLog = path.join(REPO_ROOT, 'dop-web', 'data', 'logs', 'pod-respawn.log');
+  log('respawn: spawning `oax pod` (detached)');
+  const podLog = path.join(REPO_ROOT, 'oax-web', 'data', 'logs', 'pod-respawn.log');
   fs.mkdirSync(path.dirname(podLog), { recursive: true });
   const podOut = fs.openSync(podLog, 'a');
-  const pod = spawn('node', [DOP_BIN, 'pod'], {
+  const pod = spawn('node', [OAX_BIN, 'pod'], {
     cwd: REPO_ROOT,
     detached: true,
     stdio: ['ignore', podOut, podOut],

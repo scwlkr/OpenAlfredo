@@ -2,7 +2,7 @@
 
 The agent can now modify its own source code via three markers:
 `[[READ_FILE]]`, `[[EDIT_FILE]]`, `[[WRITE_FILE]]`. See
-`dop-web/src/lib/self-edit.ts` for the implementation, and the
+`oax-web/src/lib/self-edit.ts` for the implementation, and the
 **SELF-MODIFICATION** block in `buildSystemPrompt()` for the exact contract
 the agent sees.
 
@@ -10,12 +10,12 @@ After the agent makes changes, you need to restart the pod for them to take
 effect:
 
 ```bash
-dop pod stop && dop pod
+oax pod stop && oax pod
 ```
 
 Self-edits show up in the visible reply as a `Self-edits applied:` block,
 and every edit is logged via `logInfo('self_edit_applied', ...)` to
-`dop-web/data/logs/dop-<date>.jsonl`. Use `git diff` to review before
+`oax-web/data/logs/oax-<date>.jsonl`. Use `git diff` to review before
 restarting.
 
 ---
@@ -29,27 +29,27 @@ restarting.
 **Expected behavior:**
 
 1. Agent knows from the repo index that `HEARTBEAT_CRON` lives in
-   `dop-web/.env`.
+   `oax-web/.env`.
 2. It emits:
    ```
-   [[EDIT_FILE: dop-web/.env]]
+   [[EDIT_FILE: oax-web/.env]]
    <old>HEARTBEAT_CRON="0 * * * *"</old>
    <new>HEARTBEAT_CRON="*/30 * * * *"</new>
    [[/EDIT_FILE]]
    ```
-3. Reply shows `✅ edited dop-web/.env` and a restart reminder.
+3. Reply shows `✅ edited oax-web/.env` and a restart reminder.
 
 **Verify:**
 
 ```bash
-grep HEARTBEAT_CRON dop-web/.env
+grep HEARTBEAT_CRON oax-web/.env
 # HEARTBEAT_CRON="*/30 * * * *"
 ```
 
 **Revert:**
 
 ```bash
-git checkout dop-web/.env
+git checkout oax-web/.env
 ```
 
 ---
@@ -64,28 +64,28 @@ git checkout dop-web/.env
 
 **Expected behavior:**
 
-1. Agent may emit `[[READ_FILE: dop-web/daemon.ts]]` to see the existing
+1. Agent may emit `[[READ_FILE: oax-web/daemon.ts]]` to see the existing
    command-handler patterns. On the Telegram path this triggers the read-
    reflex loop automatically; on the web UI you'll need to say "yes, read
    it and apply the edit" in a follow-up turn.
 2. Agent records the daemon start time near the top of the file and adds a
    `bot.onText(/^\/uptime\b/, ...)` handler with `isPaired()` gate, using
    `process.uptime()` or a `Date.now() - startedAt` delta.
-3. Reply shows `✅ edited dop-web/daemon.ts` (or possibly two edits if it
+3. Reply shows `✅ edited oax-web/daemon.ts` (or possibly two edits if it
    splits the state var + the handler into separate edits).
 
 **Verify:**
 
 ```bash
-git diff dop-web/daemon.ts          # see the inserted handler
-dop pod stop && dop pod              # restart
+git diff oax-web/daemon.ts          # see the inserted handler
+oax pod stop && oax pod              # restart
 # In Telegram: /uptime  →  should show something like "0h 1m"
 ```
 
 **Revert:**
 
 ```bash
-git checkout dop-web/daemon.ts
+git checkout oax-web/daemon.ts
 ```
 
 ---

@@ -11,7 +11,7 @@ Turn your agent into a persistent presence on your phone.
 
 ## 2. Add the token
 
-Edit `dop-web/.env`:
+Edit `oax-web/.env`:
 
 ```bash
 TELEGRAM_TOKEN=123456789:AA...your-token-here
@@ -22,10 +22,10 @@ The token lives only in `.env`, which is gitignored. Never commit it.
 ## 3. Start the pod
 
 ```bash
-dop pod
+oax pod
 ```
 
-(Or the daemon alone: `cd dop-web && npx tsx daemon.ts`.)
+(Or the daemon alone: `cd oax-web && npx tsx daemon.ts`.)
 
 On startup the daemon prints a **6-digit pairing code** and the exact
 message to send:
@@ -35,14 +35,14 @@ message to send:
    In Telegram, send:  /pair 123456
 ```
 
-If you miss it, run `dop pair` from the repo root to print the current
+If you miss it, run `oax pair` from the repo root to print the current
 code.
 
 ## 4. Pair your phone
 
 Open a chat with your bot and send `/pair <code>`.
 
-- Adds your chat id to `dop-web/data/.telegram-allowlist.json`.
+- Adds your chat id to `oax-web/data/.telegram-allowlist.json`.
 - Unpaired chats only see a pairing prompt — no commands, no chat.
 - Pairing persists across restarts.
 - 5 wrong attempts trigger a 15-minute lockout for that chat.
@@ -51,7 +51,7 @@ Open a chat with your bot and send `/pair <code>`.
 
 Any plain message after pairing is routed through the same engine the web
 UI uses. Same SOUL, same SQLite transcripts, same memory retrieval. Each
-Telegram chat becomes its own DOP session (`telegram-<chatId>`).
+Telegram chat becomes its own OAX session (`telegram-<chatId>`).
 
 ## Commands (paired chats only)
 
@@ -69,25 +69,25 @@ Telegram chat becomes its own DOP session (`telegram-<chatId>`).
 
 > **Why camelCase?** Telegram only accepts `[A-Za-z0-9_]` in commands and
 > stops at whitespace or dashes. `/pod-start` parses as `/pod` with a
-> dropped arg — so DOP uses `/podStart`, `/podStop`, `/podStatus`.
+> dropped arg — so OAX uses `/podStart`, `/podStop`, `/podStatus`.
 
 Per-chat model selections persist in
-`dop-web/data/.telegram-models.json`. Default model comes from `DOP_MODEL`
+`oax-web/data/.telegram-models.json`. Default model comes from `OAX_MODEL`
 in `.env`.
 
 ## Rotating the pairing code
 
-Delete `dop-web/data/.telegram-pairing-code` and restart the daemon. A new
+Delete `oax-web/data/.telegram-pairing-code` and restart the daemon. A new
 code is generated and printed on startup.
 
 ## Rotating the bot token
 
 1. @BotFather → `/revoke` → select bot → confirm.
 2. @BotFather → generate a new token.
-3. Update `TELEGRAM_TOKEN` in `dop-web/.env`.
-4. `dop pod stop && dop pod`.
+3. Update `TELEGRAM_TOKEN` in `oax-web/.env`.
+4. `oax pod stop && oax pod`.
 
 ## Disabling Telegram
 
-Leave `TELEGRAM_TOKEN` empty in `dop-web/.env`. The daemon still runs the
+Leave `TELEGRAM_TOKEN` empty in `oax-web/.env`. The daemon still runs the
 AMBITION cron and RESTLESS heartbeat — it just doesn't send any messages.

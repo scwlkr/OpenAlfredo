@@ -1,313 +1,167 @@
-<div align="center">
+# OpenAlfredo
 
-```
-          ______
-       .-"      "-.
-      /            \
-     |              |
-     |,  .-.  .-.  ,|
-     | )(_x_/  \x_)( |
-     |/     /\     \|
-     (_     ^^     _)
-      \__|IIIIII|__/
-       | \IIIIII/ |
-       \          /
-        `--------`
-```
+> Open memory. Ongoing conversation.
 
-# ☠️ Death of Prompt
+OpenAlfredo is a local-first agent workspace for people who are tired of starting from zero every time they open a chat. It keeps a persistent identity, a living task list, and a background heartbeat so conversation, memory, and follow-through stay connected.
 
-**_Kill the prompt. Keep the conversation._**
+## Why This Exists
 
-A local-first prototype for replacing one-shot prompt engineering with an ongoing, persistent conversation — a soul, an ambition, and a restless heartbeat that keeps thinking between your messages.
+Most AI chat workflows are still optimized for disposable sessions. You reopen the tool, restate context, rebuild momentum, and lose continuity again the next time you step away.
 
-</div>
+OpenAlfredo is built around a different model:
 
----
+- `SOUL.md` keeps the agent's identity stable.
+- `AMBITION.md` keeps active work visible.
+- `RESTLESS.log.md` lets the agent wake up on a schedule and act deliberately.
+- SQLite transcripts and topic files keep memory local and durable.
 
-## 🩻 The Idea
+Everything runs against your local [Ollama](https://ollama.com) instance. Nothing leaves your machine unless you explicitly wire up Telegram.
 
-Prompt engineering is dead because the frame is wrong. You should not be re-summoning an amnesiac every time you open a chat. You should be *continuing* a relationship with an agent that remembers who it is, what you want, and what it was thinking the last time you walked away.
-
-**Death of Prompt (DOP)** is a local-first MVP built on that premise:
-
-- 🧠 **SOUL** — the agent's identity, written once, evolved over time.
-- 🎯 **AMBITION** — the agent's open tasks & goals. Checked on a cron.
-- 💓 **RESTLESS** — the agent's heartbeat. Between your messages, it wakes on a timer, reviews its state, and decides whether to act, reflect, or wait.
-- 📜 **Memory** — transcripts & topic files keep context lightweight and durable.
-
-Everything runs locally against [Ollama](https://ollama.com). Nothing leaves your machine unless you wire it to Telegram.
-
----
-
-## 🪦 Current State
+## Current Shape
 
 | Surface | Status |
 |---|---|
-| Web chat UI (Next.js + SQLite) | ✅ working |
-| 3-layer memory retrieval (SOUL / topics / transcripts) | ✅ working |
-| Onboarding flow (writes first SOUL) | ✅ working |
-| AMBITION cron reminder check | ✅ working |
-| **RESTLESS heartbeat loop** | ✅ **new** |
-| **Telegram bot integration** | ✅ **new** |
-| System logs modal (JSONL, live-polled) | ✅ working |
+| Web chat UI (Next.js + SQLite) | working |
+| Shared engine for web + Telegram | working |
+| 3-layer memory retrieval | working |
+| Onboarding flow | working |
+| AMBITION reminder scan | working |
+| RESTLESS heartbeat loop | working |
+| Live system logs modal | working |
 
-The web UI and the Telegram daemon share one engine (`src/lib/dop-engine.ts`) — same SOUL, same SQLite sessions, same 3-layer memory, same `[[TASK]]` / `[[SAVE_FILE]]` marker handling. See `CLAUDE.md` for the full architecture.
+The web UI and Telegram daemon both route through `oax-web/src/lib/oax-engine.ts`, so memory retrieval, task markers, transcript persistence, and restart behavior stay consistent across both surfaces.
 
----
+## Requirements
 
-## ⚰️ Requirements
-
-- **Node.js 20+**
-- **[Ollama](https://ollama.com)** running locally with at least one model pulled (default: `llama3`)
-- **(Optional)** A Telegram bot token if you want proactive alerts on your phone
+- Node.js 20+
+- Ollama installed locally
+- At least one Ollama model pulled, such as `llama3`
+- Optional: a Telegram bot token for phone alerts
 
 ```bash
-# Make sure Ollama is running and has llama3
 ollama pull llama3
 ollama serve
 ```
 
----
-
-## 🔮 Setup
+## Quick Start
 
 ```bash
-# 1. Install dependencies
-git clone https://github.com/scwlkr/DeathOfPrompt.git
-cd DeathOfPrompt
+git clone https://github.com/scwlkr/OpenAlfredo.git
+cd OpenAlfredo
 npm install
-cd dop-web && npm install
+npm link
 
-# 2. Configure environment
-cp .env.example .env
-# (edit .env — at minimum, leave DATABASE_URL; add TELEGRAM_TOKEN if using the bot)
-
-# 3. Initialize the database
-npx prisma db push
-npx prisma generate
-
-# 4. Launch the full stack (ollama + web + telegram daemon)
+cd oax-web
+npm install
 cd ..
-node bin/dop.js pod         # → http://localhost:3000
+
+oax pod
 ```
 
-One command spins up Ollama (if it isn't already running), the Next.js dashboard, and the Telegram daemon. Ctrl-C tears it all down. From another terminal you can also run `node bin/dop.js pod stop` / `pod status`.
+After startup:
 
-If you only want the web UI (no daemon, no Ollama management):
+- Web UI: `http://localhost:3000`
+- Full pod stop: `oax pod stop`
+- Pod status: `oax pod status`
+- Pairing code: `oax pair`
+
+If you do not want to expose the CLI globally, use `node bin/oax.js <command>` instead.
+
+## Environment
+
+Copy the runtime template:
 
 ```bash
-node bin/dop.js dashboard
+cp oax-web/.env.example oax-web/.env
 ```
 
-On first load you'll walk through the onboarding flow — this writes your agent's initial `SOUL.md`.
+Important variables:
 
----
+- `DATABASE_URL="file:./data/oax.db"`
+- `OAX_MODEL="llama3"`
+- `TELEGRAM_TOKEN=` to enable the Telegram bot
+- `HEARTBEAT_CRON` and `AMBITION_CRON` to tune background cadence
 
-## 👻 The Restless Daemon
-
-The daemon is a separate long-running process. It powers **both** the Telegram bot and the `RESTLESS.md` heartbeat. `dop pod` starts it for you, but you can also run it standalone:
+## Core Commands
 
 ```bash
-# from dop-web/
-npx tsx daemon.ts
+oax pod
+oax pod stop
+oax pod status
+oax pair
+oax dashboard
+oax completion
 ```
 
-You should see:
-
-```
-💀 Starting Telegram Bot...
-⏰ Starting AMBITION cron (*/30 * * * *)
-💓 Starting RESTLESS heartbeat (0 * * * *)
-☠️  DOP Daemon is alive. The agent is restless.
-```
-
-### What the heartbeat does
-
-Every tick (hourly by default), the agent wakes up — no user input — and is handed:
-
-- its `SOUL.md`
-- its open `AMBITION.md` tasks
-- the last 10 heartbeat entries from `RESTLESS.md`
-
-It then emits one of:
-
-| Token | Effect |
-|---|---|
-| `[[NOTIFY: …]]` | Sends a proactive Telegram message |
-| `[[TASK: …]]` | Appends a new task to `AMBITION.md` |
-| `[[REFLECT: …]]` | Writes a private thought to the heartbeat log |
-| `[[REST]]` | Stays silent this tick |
-
-All heartbeat events are logged to the bottom of `RESTLESS.md` (capped at 50 entries). Tune the cadence via `HEARTBEAT_CRON` in `.env`, or set `HEARTBEAT_ACTIVE=false` to silence the heart.
-
----
-
-## 📡 Telegram Setup
-
-Turn your agent into a persistent presence on your phone.
-
-### 1. Create a bot
-
-1. Open Telegram, message **[@BotFather](https://t.me/BotFather)**.
-2. Send `/newbot`, follow the prompts, and copy the HTTP API token it gives you.
-
-### 2. Add the token
-
-In `dop-web/.env`:
+Inside `oax-web/`:
 
 ```bash
-TELEGRAM_TOKEN=123456789:AA...your-token-here
+npm run dev
+npm run build
+npm run start
+npm run lint
+npx vitest run
+npx prisma generate
+npx prisma db push
 ```
 
-### 3. Start the pod (or just the daemon)
+## Telegram
+
+The Telegram daemon is optional, but it is part of the default pod. Once `TELEGRAM_TOKEN` is set:
 
 ```bash
-node bin/dop.js pod          # starts everything
-# or, daemon only:
-cd dop-web && npx tsx daemon.ts
+oax pod
+oax pair
 ```
 
-On startup the daemon prints a 6-digit **pairing code** and the exact message to send:
+Then in Telegram:
 
-```
-🔑 Telegram pairing code: 123456 (expires in 5 minutes)
-   In Telegram, send:  /pair 123456
-```
-
-If you miss it, run `node bin/dop.js pair` from the repo root.
-
-### 4. Pair your phone
-
-Open a chat with your bot and send `/pair <code>`. That adds your chat to the allowlist (`dop-web/data/.telegram-allowlist.json`). Unpaired chats get a pairing prompt and nothing else — no commands, no chat. Pairing persists across restarts. To rotate the code, delete `dop-web/data/.telegram-pairing-code` and restart the daemon.
-
-### Bot commands (paired chats only)
-
-| Command | Action |
-|---|---|
-| `/pair <code>` | Pair this chat (only command unpaired chats can use) |
-| `/unpair` | Disconnect this chat from the agent |
-| `/start` | Confirm subscription + show help |
-| `/status` | Show current AMBITION.md contents |
-| `/heartbeat` | Force a heartbeat tick now and show the result |
-| `/model` | List installed Ollama models (✓ marks current) |
-| `/model <n\|name>` | Switch this chat to a different model (persists across restarts) |
-| `/restart` | Restart the pod (~15-30s downtime) — auto-invoked after agent self-edits |
-| `/podStatus` | Show per-process alive/dead state of the pod |
-| `/podStop` | Tear down the whole pod remotely (kills this daemon too — no way back without running `dop pod` locally) |
-| *(any other text)* | Converse with the agent |
-
-> **Why camelCase?** Telegram commands only accept `[A-Za-z0-9_]` and stop at the first whitespace or dash, so `/pod-start` gets parsed as `/pod` and loses the rest. camelCase keeps each command as a single token.
-
-Per-chat model selections are stored in `dop-web/data/.telegram-models.json`. The default model comes from `DOP_MODEL` in `.env`.
-
----
-
-## 🔄 Restart flow
-
-When the agent self-edits code that needs a restart to take effect (cron schedules, new commands, daemon behavior), it can request a restart automatically by emitting `[[RESTART_POD]]` alongside its edit markers. You can also trigger a restart manually with `/restart` in Telegram.
-
-**How it works:**
-
-1. Daemon sends a "🔄 Restarting…" message.
-2. Daemon spawns `bin/respawn.js` detached, then exits.
-3. Respawn helper waits 3s, runs `dop pod stop`, runs `dop pod`, polls `http://localhost:3000` for up to 60s.
-4. Outcome appended to `dop-web/data/logs/respawn.log` with timestamps.
-
-Typical downtime: **10-20s warm, up to ~30s if Next has to recompile.** If the pod doesn't come back within 60s, check `respawn.log` and `pod-respawn.log` to see what broke.
-
-The `[[RESTART_POD]]` marker is only honored when at least one `EDIT_FILE`/`WRITE_FILE` succeeded in the same turn, so a failed edit won't trigger a pointless restart loop.
-
-You can also run `bin/respawn.js` directly:
-
-```bash
-node bin/respawn.js --dry-run          # show what would happen
-node bin/respawn.js                     # restart now
-node bin/respawn.js --delay=5 --timeout=90   # custom timing
+```text
+/pair <code>
 ```
 
----
+Paired chats can:
 
-## 🔧 Self-modification
+- inspect current ambitions with `/status`
+- force a heartbeat with `/heartbeat`
+- switch Ollama models with `/model`
+- restart the pod with `/restart`
 
-The agent can read and edit its own source code via three markers in its replies. Paths are scoped to the repo root; `.git/`, `node_modules/`, `.next/`, `data/`, and `.db` files are hard-blocked. Every applied edit is logged to `dop-web/data/logs/dop-<date>.jsonl` and summarized in the visible reply.
+See [`docs/TELEGRAM_SETUP.md`](./docs/TELEGRAM_SETUP.md) for the full flow.
 
-| Marker | Shape |
-|---|---|
-| `[[READ_FILE: path]]` | Single-line. On the Telegram path, a 1-round reflex feeds the file contents back automatically. |
-| `[[EDIT_FILE: path]]` | Block with `<old>…</old><new>…</new>`. `old` must match exactly once. |
-| `[[WRITE_FILE: path]]` | Block — overwrites the whole file. |
-| `[[RESTART_POD]]` | Single line. Requests a pod restart after a successful edit (see **Restart flow** above). |
+## Repository Layout
 
-Just talk to the agent in natural language:
-
-> "Change the restless heartbeat from hourly to every 30 minutes and restart so it takes effect."
-
-If the agent emits `[[RESTART_POD]]`, the pod auto-restarts. If not, run `/restart` in Telegram or `dop pod stop && dop pod` locally. See `docs/SELF_MOD_TEST_PROMPTS.md` for tested prompts, verify/revert steps, and documented failure modes.
-
----
-
-## 🕸️ Layout
-
-```
-/                  ← thin CLI wrapper (bin/dop.js), SOUL/AMBITION/RESTLESS live here
-├── SOUL.md        ← agent identity
-├── AMBITION.md    ← open tasks / goals
-├── RESTLESS.md    ← heartbeat config + log
-├── memory/        ← unused pre-unification stub (safe to delete)
-└── dop-web/       ← the actual Next.js app
-    ├── daemon.ts  ← Telegram bot + cron workers
-    ├── prisma/    ← SQLite schema
-    ├── data/      ← web-path memory + logs + sqlite db
-    └── src/
-        ├── app/   ← Next.js routes (/api/chat, /api/onboarding, /api/logs, …)
-        └── lib/   ← dop-engine (shared brain), memory-retrieval, logger, dop (Telegram/heartbeat)
+```text
+/
+|- bin/oax.js        # CLI wrapper
+|- oax-web/          # Next.js app, Prisma, daemon, shared engine
+|- docs/             # architecture, security, Telegram, rename checklist
+|- BRAND.md          # brand system for OpenAlfredo
+`- OAX_MVP_PLAN.md   # original MVP direction, renamed to match the new identity
 ```
 
----
+## Rename Work
 
-## 🧪 Dev Commands
+This repository has been fully renamed to the OpenAlfredo identity system.
 
-From the **repo root** (`dop` CLI):
+The canonical mapping is now:
 
-```bash
-node bin/dop.js pod          # start ollama + web + daemon
-node bin/dop.js pod stop     # tear down the whole pod
-node bin/dop.js pod status   # per-process alive/dead state
-node bin/dop.js pair         # print current Telegram pairing code
-node bin/dop.js dashboard    # web UI only (legacy)
-node bin/respawn.js          # restart the pod (stop + start + health-check)
-node bin/respawn.js --dry-run  # show what respawn would do without doing it
-node bin/dop.js completion   # generate zsh/bash completion script
-```
+- product name: `OpenAlfredo`
+- technical abbreviation: `OAX`
+- terminal command: `oax`
+- app package directory: `oax-web`
 
-From `dop-web/`:
+The execution checklist for that migration lives in [`docs/OPENALFREDO_RENAME_CHECKLIST.md`](./docs/OPENALFREDO_RENAME_CHECKLIST.md).
 
-```bash
-npm run dev             # Next dev server
-npm run build           # production build
-npm run lint            # eslint
-npx vitest              # run tests
-npx vitest run src/lib/memory-retrieval.test.ts   # single test
-npx prisma db push      # sync schema to SQLite
-npx prisma generate     # regen client after schema edit
-npx tsx daemon.ts       # Telegram + heartbeat daemon (standalone)
-```
+## Docs
 
----
+- [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md)
+- [`docs/SECURITY.md`](./docs/SECURITY.md)
+- [`docs/TELEGRAM_SETUP.md`](./docs/TELEGRAM_SETUP.md)
+- [`docs/SELF_MOD_TEST_PROMPTS.md`](./docs/SELF_MOD_TEST_PROMPTS.md)
+- [`BRAND.md`](./BRAND.md)
+- [`OAX_MVP_PLAN.md`](./OAX_MVP_PLAN.md)
 
-## 📿 Design Notes
+## License
 
-- `DOP_MVP_PLAN.md` — the original MVP spec
-- `DOP_IDEAS_FROM_CODEX.md` — exploratory ideas
-- `CLAUDE.md` — architecture reference for Claude Code (and humans)
-
----
-
-<div align="center">
-
-_The prompt is dead. Long live the conversation._
-
-☠️
-
-</div>
+ISC

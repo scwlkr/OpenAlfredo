@@ -1,13 +1,13 @@
 #!/usr/bin/env node
-// DOP Bootstrap — idempotent first-run initializer.
+// OAX Bootstrap — idempotent first-run initializer.
 //
 // Converts a fresh clone into a working local agent by:
-//   1. Creating the dop-web/data/ subtree
+//   1. Creating the oax-web/data/ subtree
 //   2. Copying template SOUL / AMBITION / memory index from examples/
 //   3. Scaffolding an empty heartbeat log
-//   4. Copying .env.example -> .env (root and dop-web/) if missing
-//   5. Running `prisma generate && prisma db push` if dop-web/data/dop.db is absent
-//   6. Generating a 32-byte API key at dop-web/data/.dop-api-key
+//   4. Copying .env.example -> .env (root and oax-web/) if missing
+//   5. Running `prisma generate && prisma db push` if oax-web/data/oax.db is absent
+//   6. Generating a 32-byte API key at oax-web/data/.oax-api-key
 //
 // Safe to re-run. Nothing is overwritten unless --force is passed.
 //
@@ -23,8 +23,8 @@ const crypto = require('crypto');
 const { execSync } = require('child_process');
 
 const REPO_ROOT = path.resolve(__dirname, '..');
-const DOP_WEB = path.join(REPO_ROOT, 'dop-web');
-const DATA_DIR = path.join(DOP_WEB, 'data');
+const OAX_WEB = path.join(REPO_ROOT, 'oax-web');
+const DATA_DIR = path.join(OAX_WEB, 'data');
 const EXAMPLES_DIR = path.join(REPO_ROOT, 'examples');
 
 const args = process.argv.slice(2);
@@ -41,8 +41,8 @@ function requireNode20() {
   const [major] = process.versions.node.split('.').map(Number);
   if (major < 20) die(`Node 20+ required (got ${process.versions.node})`);
 }
-function requireDopWeb() {
-  if (!fs.existsSync(DOP_WEB)) die(`dop-web/ not found at ${DOP_WEB}`);
+function requireOaxWeb() {
+  if (!fs.existsSync(OAX_WEB)) die(`oax-web/ not found at ${OAX_WEB}`);
 }
 
 // Step helpers ─────────────────────────────────────────────────────────────
@@ -113,37 +113,37 @@ function stepCopyTemplates() {
 
 function stepCopyEnv() {
   log('• copying .env.example → .env (if missing)…');
-  const webEnvEx = path.join(DOP_WEB, '.env.example');
-  const webEnv = path.join(DOP_WEB, '.env');
+  const webEnvEx = path.join(OAX_WEB, '.env.example');
+  const webEnv = path.join(OAX_WEB, '.env');
   if (fs.existsSync(webEnvEx) && (!fs.existsSync(webEnv) || FORCE)) {
     fs.copyFileSync(webEnvEx, webEnv);
-    log('  → dop-web/.env created from template');
+    log('  → oax-web/.env created from template');
   } else if (fs.existsSync(webEnv)) {
-    log('  ✓ dop-web/.env already present');
+    log('  ✓ oax-web/.env already present');
   } else {
-    warn('  ! dop-web/.env.example not found — skipping');
+    warn('  ! oax-web/.env.example not found — skipping');
   }
 }
 
 function stepPrisma() {
   log('• prisma setup…');
-  const db = path.join(DATA_DIR, 'dop.db');
+  const db = path.join(DATA_DIR, 'oax.db');
   if (fs.existsSync(db) && !FORCE) {
-    log('  ✓ dop-web/data/dop.db already present');
+    log('  ✓ oax-web/data/oax.db already present');
     return;
   }
   try {
-    execSync('npx prisma generate', { cwd: DOP_WEB, stdio: QUIET ? 'pipe' : 'inherit' });
-    execSync('npx prisma db push', { cwd: DOP_WEB, stdio: QUIET ? 'pipe' : 'inherit' });
+    execSync('npx prisma generate', { cwd: OAX_WEB, stdio: QUIET ? 'pipe' : 'inherit' });
+    execSync('npx prisma db push', { cwd: OAX_WEB, stdio: QUIET ? 'pipe' : 'inherit' });
     log('  → prisma: client generated + schema pushed');
   } catch (e) {
-    warn('  ! prisma setup failed — run `cd dop-web && npx prisma generate && npx prisma db push` manually');
+    warn('  ! prisma setup failed — run `cd oax-web && npx prisma generate && npx prisma db push` manually');
   }
 }
 
 function stepApiKey() {
   log('• api key…');
-  const keyFile = path.join(DATA_DIR, '.dop-api-key');
+  const keyFile = path.join(DATA_DIR, '.oax-api-key');
   if (fs.existsSync(keyFile) && !FORCE) {
     log('  ✓ api key already present');
     return;
@@ -151,22 +151,22 @@ function stepApiKey() {
   const key = crypto.randomBytes(32).toString('hex');
   ensureDir(DATA_DIR);
   fs.writeFileSync(keyFile, key, { mode: 0o600 });
-  log('  → wrote dop-web/data/.dop-api-key (0600)');
+  log('  → wrote oax-web/data/.oax-api-key (0600)');
 }
 
 function printBanner() {
   if (QUIET) return;
   log('');
-  log('✓ DOP is ready.');
+  log('✓ OpenAlfredo is ready.');
   log('');
   log('Next:');
   log('  1. Make sure Ollama is running:   ollama serve');
   log('  2. Pull a model:                  ollama pull llama3');
-  log('  3. Start the pod:                 dop pod');
+  log('  3. Start the pod:                 oax pod');
   log('');
   log('Optional (Telegram):');
-  log('  4. Edit dop-web/.env and set TELEGRAM_TOKEN');
-  log('  5. Restart with: dop pod');
+  log('  4. Edit oax-web/.env and set TELEGRAM_TOKEN');
+  log('  5. Restart with: oax pod');
   log('  6. Pair your phone: send /pair <code from terminal> to your bot');
   log('');
 }
@@ -178,9 +178,9 @@ function runCheck() {
     path.join(DATA_DIR, 'AMBITION.md'),
     path.join(DATA_DIR, 'memory', 'index.json'),
     path.join(DATA_DIR, 'RESTLESS.log.md'),
-    path.join(DATA_DIR, '.dop-api-key'),
-    path.join(DATA_DIR, 'dop.db'),
-    path.join(DOP_WEB, '.env'),
+    path.join(DATA_DIR, '.oax-api-key'),
+    path.join(DATA_DIR, 'oax.db'),
+    path.join(OAX_WEB, '.env'),
   ];
   const missing = required.filter((p) => !fs.existsSync(p));
   if (missing.length === 0) {
@@ -194,11 +194,11 @@ function runCheck() {
 
 // Main ─────────────────────────────────────────────────────────────────────
 requireNode20();
-requireDopWeb();
+requireOaxWeb();
 
 if (CHECK) runCheck();
 
-log('DOP bootstrap' + (FORCE ? ' (force)' : '') + '…');
+log('OAX bootstrap' + (FORCE ? ' (force)' : '') + '…');
 stepCreateDirs();
 stepCopyTemplates();
 stepCopyEnv();

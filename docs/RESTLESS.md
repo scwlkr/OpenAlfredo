@@ -16,11 +16,11 @@ reflect, or wait.
 - **Max log entries retained:** 50 (older ticks are trimmed)
 - **Active:** true
 
-Tune the cadence with `HEARTBEAT_CRON` in `dop-web/.env` (any valid
+Tune the cadence with `HEARTBEAT_CRON` in `oax-web/.env` (any valid
 node-cron expression). To disable the heartbeat entirely, set
 `HEARTBEAT_ACTIVE=false`.
 
-The heartbeat log lives at `dop-web/data/RESTLESS.log.md` (gitignored).
+The heartbeat log lives at `oax-web/data/RESTLESS.log.md` (gitignored).
 
 ## Protocol
 
@@ -47,4 +47,4 @@ Each entry in the log is a single markdown bullet:
 
 Entries live between the `<!-- heartbeat-log-start -->` and
 `<!-- heartbeat-log-end -->` markers inside
-`dop-web/data/RESTLESS.log.md`, capped at 50.
+`oax-web/data/RESTLESS.log.md`, capped at 50.
