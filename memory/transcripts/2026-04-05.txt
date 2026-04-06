@@ -1,9 +1,0 @@
-[2026-04-05T03:38:06.066Z] user: Hi
-[2026-04-05T03:38:06.066Z] agent: Hello there.
-[2026-04-05T03:38:06.067Z] user: remind me to grab laundry
-[2026-04-05T03:38:06.068Z] agent: Ok.  done.
-
-*(Task added to AMBITION.md)*
-[2026-04-05T03:38:06.068Z] user: hi
-[2026-04-05T03:38:06.072Z] user: trace-281nbw
-[2026-04-05T03:38:06.072Z] agent: ack
