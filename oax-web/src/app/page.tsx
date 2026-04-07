@@ -69,6 +69,7 @@ export default function Home() {
       .catch(() => setLoading(false));
   }, []);
 
+  /* eslint-disable react-hooks/refs -- body/headers callbacks run at request time, not during render */
   const { messages, sendMessage, status } = useChat({
     transport: new DefaultChatTransport({
       api: '/api/chat',
@@ -79,6 +80,7 @@ export default function Home() {
       }
     })
   });
+  /* eslint-enable react-hooks/refs */
 
   const [input, setInput] = useState('');
   const [showLogs, setShowLogs] = useState(false);

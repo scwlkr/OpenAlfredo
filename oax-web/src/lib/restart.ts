@@ -22,7 +22,6 @@ export function triggerPodRestart(opts: { delaySec?: number; timeoutSec?: number
   const { delaySec = 3, timeoutSec = 60 } = opts;
   // Use eval('require') to get the real Node.js require at runtime,
   // hidden from Turbopack's static analysis.
-  // eslint-disable-next-line no-eval
   const _require = eval('require') as NodeRequire;
   const path = _require('path') as typeof import('path');
   const cp = _require('child_process') as typeof import('child_process');
