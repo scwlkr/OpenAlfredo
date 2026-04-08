@@ -25,8 +25,8 @@ npm run start    # next start (after build)
 npm run lint     # next lint (eslint-config-next)
 npx vitest       # run all tests (vitest, node environment)
 npx vitest run src/lib/memory-retrieval.test.ts   # single test file
-npx prisma db push           # sync schema to SQLite
-npx prisma generate          # regenerate prisma client after schema edits
+npm run db:push              # sync schema to the runtime SQLite database
+npm run db:generate          # regenerate prisma client against the runtime DB path
 ```
 
 ### `oax` CLI (repo root)
@@ -53,7 +53,7 @@ The daemon (`oax-web/daemon.ts`) requires `TELEGRAM_TOKEN` and runs the every-30
 ## Environment & External Dependencies
 
 - **Ollama must be running locally** for chat to work. Default model is `llama3`; the UI fetches available models via `/api/models`.
-- `oax-web/.env` sets `DATABASE_URL="file:./data/oax.db"` (SQLite, relative to `oax-web/`). Prisma config is in `oax-web/prisma.config.ts` and uses dotenv.
+- OpenAlfredo stores SQLite state at `oax-web/data/oax.db` by default. You normally do not need to set `DATABASE_URL`; the runtime and the `npm run db:*` scripts both pin Prisma to that database automatically. If you override it, use an absolute SQLite URL.
 - `TELEGRAM_TOKEN` env var toggles the Telegram bot in `daemon.ts` — absence just disables the bot, does not error.
 
 ## Architecture

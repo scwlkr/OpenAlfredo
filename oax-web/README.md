@@ -25,8 +25,8 @@ npm run build
 npm run start
 npm run lint
 npx vitest run
-npx prisma generate
-npx prisma db push
+npm run db:generate
+npm run db:push
 ```
 
 ## Key Paths
@@ -46,4 +46,6 @@ Copy the template:
 cp .env.example .env
 ```
 
-The default SQLite database path is `file:./data/oax.db`.
+OpenAlfredo stores SQLite state in `oax-web/data/oax.db` by default. You usually do not
+need to set `DATABASE_URL`; the app runtime and the repo's `db:*` scripts pin Prisma to
+that database automatically. If you override it, use an absolute SQLite URL.

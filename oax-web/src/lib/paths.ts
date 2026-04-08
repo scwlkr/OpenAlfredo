@@ -59,6 +59,26 @@ export function databaseUrlForDataRoot(dataRoot: string = DATA_ROOT): string {
   return `file:${toPosixPath(path.join(dataRoot, 'oax.db'))}`;
 }
 
+export function normalizeDatabaseUrl(
+  rawValue: string | undefined,
+  dataRoot: string = DATA_ROOT
+): string {
+  if (!rawValue) return databaseUrlForDataRoot(dataRoot);
+  if (!rawValue.startsWith('file:')) return rawValue;
+
+  const body = rawValue.slice('file:'.length);
+  const queryIndex = body.indexOf('?');
+  const dbPath = queryIndex === -1 ? body : body.slice(0, queryIndex);
+  const suffix = queryIndex === -1 ? '' : body.slice(queryIndex);
+
+  if (!dbPath || dbPath === ':memory:') return rawValue;
+  if (path.isAbsolute(dbPath)) return `file:${toPosixPath(dbPath)}${suffix}`;
+
+  // Prisma resolves relative SQLite URLs differently between CLI and runtime.
+  // Normalize legacy relative URLs to a single absolute path under oax-web/.
+  return `file:${toPosixPath(path.resolve(WEB_ROOT, dbPath))}${suffix}`;
+}
+
 export function resolveDataPath(...segments: string[]): string {
   return path.join(DATA_ROOT, ...segments);
 }

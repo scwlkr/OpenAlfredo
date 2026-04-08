@@ -1,14 +1,8 @@
-import path from 'node:path';
-
 import { PrismaClient } from '@prisma/client';
 
-import { DATA_ROOT, toPosixPath } from './paths';
+import { DATA_ROOT, normalizeDatabaseUrl } from './paths';
 
-function defaultDatabaseUrl(): string {
-  return `file:${toPosixPath(path.join(DATA_ROOT, 'oax.db'))}`;
-}
-
-const databaseUrl = process.env.DATABASE_URL || defaultDatabaseUrl();
+const databaseUrl = normalizeDatabaseUrl(process.env.DATABASE_URL, DATA_ROOT);
 process.env.DATABASE_URL = databaseUrl;
 
 const globalForPrisma = globalThis as unknown as {

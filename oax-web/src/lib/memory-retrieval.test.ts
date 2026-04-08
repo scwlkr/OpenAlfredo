@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { retrieveContext, saveTopic } from './memory-retrieval';
 import { prisma } from './db';
+import { THEMES_FILE } from './paths';
 
 const AGENT_ID = 'test-mem-' + Math.random().toString(36).slice(2, 8);
 const AGENT_DIR = path.join(process.cwd(), 'data', 'agents', AGENT_ID);
@@ -15,11 +16,13 @@ const TEST_TOPIC_SLUG = TEST_TOPIC_TITLE.toLowerCase().replace(/[^a-z0-9]+/g, '-
 
 // Snapshot index.json so tests can restore it.
 let originalIndex: string;
+let originalThemes: string | null = null;
 
 beforeAll(async () => {
   originalIndex = fs.existsSync(MEMORY_INDEX)
     ? fs.readFileSync(MEMORY_INDEX, 'utf-8')
     : JSON.stringify({ version: '1.0', topics: [] });
+  originalThemes = fs.existsSync(THEMES_FILE) ? fs.readFileSync(THEMES_FILE, 'utf-8') : null;
 
   fs.mkdirSync(AGENT_DIR, { recursive: true });
   fs.writeFileSync(
@@ -39,12 +42,18 @@ afterAll(async () => {
   const topicPath = path.join(TOPICS_DIR, TEST_TOPIC_SLUG);
   if (fs.existsSync(topicPath)) fs.unlinkSync(topicPath);
   fs.writeFileSync(MEMORY_INDEX, originalIndex);
+  if (originalThemes === null) {
+    fs.rmSync(THEMES_FILE, { force: true });
+  } else {
+    fs.writeFileSync(THEMES_FILE, originalThemes);
+  }
   await prisma.transcriptEntry.deleteMany({ where: { sessionId: TEST_SESSION } });
   await prisma.chatSession.deleteMany({ where: { id: TEST_SESSION } });
   await prisma.$disconnect();
 });
 
 beforeEach(async () => {
+  fs.rmSync(THEMES_FILE, { force: true });
   await prisma.transcriptEntry.deleteMany({ where: { sessionId: TEST_SESSION } });
   await prisma.chatSession.deleteMany({ where: { id: TEST_SESSION } });
 });

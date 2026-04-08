@@ -23,6 +23,7 @@ const {
   REPO_ROOT,
   OAX_WEB,
   BASE_DATA_DIR: DATA_DIR,
+  databaseUrlForDataDir,
   ensureWebEnvFile,
   createDataScaffold,
   ensureDatabase,
@@ -66,14 +67,14 @@ function stepPrisma() {
   try {
     ensureDatabase({
       dataDir: DATA_DIR,
-      databaseUrl: 'file:./data/oax.db',
+      databaseUrl: databaseUrlForDataDir(DATA_DIR),
       force: FORCE,
       generate: true,
       quiet: QUIET,
     });
     log('  → prisma: client generated + schema pushed');
   } catch (e) {
-    warn('  ! prisma setup failed — run `cd oax-web && npx prisma generate && npx prisma db push` manually');
+    warn('  ! prisma setup failed — run `cd oax-web && npm run db:generate && npm run db:push` manually');
   }
 }
 

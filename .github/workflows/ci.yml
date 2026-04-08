@@ -35,7 +35,11 @@ jobs:
         working-directory: oax-web
 
       - name: Generate Prisma client
-        run: npx prisma generate
+        run: npm run db:generate
+        working-directory: oax-web
+
+      - name: Sync Prisma schema for test database
+        run: npm run db:push
         working-directory: oax-web
 
       - name: Lint
