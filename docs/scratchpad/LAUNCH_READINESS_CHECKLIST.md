@@ -1,266 +1,247 @@
 # OpenAlfredo Launch Readiness Checklist
 
-> Generated 2026-04-07 by Reality Checker assessment.
-> Work through each item sequentially. Check the box when the fix is verified.
+> Reviewed 2026-04-08 against the current repo state.
+> This replaces the older checklist that was written against a previous OA snapshot.
+
+## Verification Snapshot
+
+### Commands run
+
+- `cd oax-web && npm test` -> passes (`104 passed`)
+- `cd oax-web && npm run lint` -> fails
+- `cd oax-web && npm run build` -> passes, but with Next.js 16 warnings
+
+### Important interpretation
+
+- The old "`restart.ts` breaks build" issue is no longer current. The production build succeeds.
+- The old ambition/task round-trip test failure is no longer current. The full test suite is green.
+- The main hard blocker today is lint/CI hygiene, not build correctness.
 
 ---
 
-## Issue #1: Build Is Broken
+## Legacy Items That No Longer Apply
 
-**Severity:** Critical — blocks all deployment
-**File:** `oax-web/src/lib/restart.ts:12`
-**Root cause:** `restart.ts` calls `spawn('node', [respawnBin, ...])` at the module level import chain. Next.js tries to bundle this for the edge/browser and fails to resolve the dynamic path `path.resolve(process.cwd(), '..', 'bin', 'respawn.js')`.
+### Retired: Build broken via `restart.ts`
 
-**Import chain:** `restart.ts` -> `oax-engine.ts` -> `api/chat/route.ts`
+`oax-web/src/lib/restart.ts` now hides Node-only imports behind runtime `eval('require')`, and `npm run build` completes successfully.
+
+### Retired: Ambition append test failure
+
+The old failing test no longer reproduces. `npm test` currently passes end-to-end.
+
+### Retired: Missing `.env.example`
+
+`oax-web/.env.example` already exists and covers the main runtime knobs.
+
+### Retired: `next lint` directory/config bug
+
+Lint is still failing, but not because `next lint` is misconfigured. The repo now runs `eslint .`, and the failures are real code issues plus generated artifacts being linted.
+
+### Retired: "single-page app" as a launch defect
+
+The app is still a single route, but the UI has already been split into focused components under `oax-web/src/components/`. This is not a launch-readiness problem by itself.
+
+### Retired: `gh` CLI missing
+
+That was a machine-local tooling gap, not a product launch issue.
+
+---
+
+## Current Launch Issues
+
+### Issue #1: Lint / CI Is Red
+
+**Severity:** Critical — current quality gate is failing
+
+**What is happening now**
+
+`npm run lint` fails on current source files and also lints generated coverage assets.
+
+**Observed failures**
+
+- `oax-web/src/components/ReflectionPanel.tsx` — `react-hooks/set-state-in-effect`
+- `oax-web/src/components/ReflectionPanel.tsx` — `react/no-unescaped-entities`
+- `oax-web/src/components/SettingsPanel.tsx` — `react-hooks/set-state-in-effect`
+- `oax-web/src/components/TasksModal.tsx` — `react-hooks/purity` (`Date.now()` during render)
+- `oax-web/src/components/WorkspacePanel.tsx` — `react-hooks/set-state-in-effect`
+- `oax-web/coverage/lcov-report/*.js` — generated files are being linted
 
 ### Checklist
 
-- [ ] Isolate `triggerPodRestart` behind a dynamic `import()` or lazy `require()` so Next.js doesn't try to statically resolve `child_process` and the path during build
-- [ ] Alternatively, mark `restart.ts` exports as server-only (e.g., `import 'server-only'` at top) and ensure the chat route is not bundled for the edge runtime
-- [ ] Run `npm run build` from `oax-web/` and confirm it completes with exit code 0
-- [ ] Confirm `npm run start` serves the app on `:3000` after a successful build
-- [ ] Confirm the dev server (`npm run dev`) still works after the fix
+- [ ] Exclude generated coverage output from linting in flat ESLint config
+- [ ] Refactor `ReflectionPanel`, `SettingsPanel`, and `WorkspacePanel` to satisfy current React hook rules
+- [ ] Remove the impure render-time `Date.now()` call from `TasksModal`
+- [ ] Fix the unescaped quotes in `ReflectionPanel`
+- [ ] Run `cd oax-web && npm run lint` and confirm exit code `0`
+- [ ] Re-run `cd oax-web && npm test && npm run build`
 
 ---
 
-## Issue #2: Failing Test — Ambition Task Round-Trip
+### Issue #2: Next.js 16 Migration Warnings Are Real
 
-**Severity:** High — core feature regression
-**File:** `oax-web/src/lib/__tests__/ambition.test.ts:68`
-**Root cause:** `listTasks()` returns 1 task instead of 3 after three sequential `appendTask()` calls. Likely the `readAmbition()` -> `resolveReadPath()` fallback is reading from a stale file, or the `## Tasks` header insertion in `appendTask()` is clobbering prior entries.
+**Severity:** High — build passes, but the app is carrying migration debt
+
+**Observed during `npm run build`**
+
+- Next.js warns that `src/middleware.ts` uses a deprecated file convention and should move to `proxy`
+- Next.js warns that workspace root inference is ambiguous because both repo root and `oax-web/` have lockfiles
+- Turbopack warns that tracing from `next.config.mjs` -> `src/lib/paths.ts` -> `src/app/api/onboarding/route.ts` may be pulling in more of the project than intended
 
 ### Checklist
 
-- [ ] Run `npx vitest run src/lib/__tests__/ambition.test.ts` in isolation and read the full output
-- [ ] Add a `console.log(fs.readFileSync(AMBITION_PATH, 'utf-8'))` after the three `appendTask()` calls to see the actual file state
-- [ ] Confirm `appendTask` appends below `## Tasks` without overwriting previous lines — inspect the `readAmbition()` -> `resolveReadPath()` -> `CANONICAL_AMBITION_PATH` vs `LEGACY_AMBITION_PATH` fallback logic for the test environment
-- [ ] Fix the root cause (likely a path resolution issue in the test's `beforeEach` setup vs what `resolveReadPath()` returns)
-- [ ] Run the full test suite: `npx vitest run` — confirm 58/58 pass, 0 failures
+- [ ] Replace `oax-web/src/middleware.ts` with the current Next.js 16 `proxy` convention
+- [ ] Set `turbopack.root` in `oax-web/next.config.mjs`
+- [ ] Reduce or explicitly annotate the dynamic path tracing coming from `src/lib/paths.ts`
+- [ ] Re-run `cd oax-web && npm run build` and confirm warnings are either removed or consciously accepted
 
 ---
 
-## Issue #3: Telegram Token On Disk
+### Issue #3: Settings Writes Are Not Validated
 
-**Severity:** Medium — secret management hygiene
-**File:** `oax-web/.env`
-**Reality correction:** `.env` is in `.gitignore` and was never committed to git history. The token exists only on your local disk. This is standard for local dev. The concern is limited to: if the repo goes public with an accidental `.env` inclusion, or if the disk is shared.
+**Severity:** High — user-editable config can create invalid runtime state
+
+**Files**
+
+- `oax-web/src/app/api/settings/route.ts`
+- `oax-web/daemon.ts`
+
+**Why it matters**
+
+The settings UI allows free-text cron edits. The API writes those strings directly into `.env`, and the daemon later passes them straight into `cron.schedule(...)`. There is no validation step in the API and no defensive startup handling in the daemon.
+
+That means a bad cron string can turn "save settings" into "next daemon boot fails or behaves unpredictably."
 
 ### Checklist
 
-- [ ] Confirm `.env` is in `oax-web/.gitignore` (it is — line 30)
-- [ ] Run `git log --all --oneline -- oax-web/.env` and confirm empty output (no history)
-- [ ] Create `oax-web/.env.example` (if it doesn't already exist) with placeholder values and no real secrets
-- [ ] Add a note to the README: "Copy `.env.example` to `.env` and fill in your values. Never commit `.env`."
-- [ ] Consider whether the token should be rotated anyway as a precaution (if this repo was ever public with the file present)
+- [ ] Validate cron expressions in `/api/settings` before writing them
+- [ ] Add daemon-side startup guards so one bad env value does not crash scheduling
+- [ ] Return actionable validation errors to the UI instead of silently writing bad config
+- [ ] Decide whether settings should be rejected atomically when any one field is invalid
+- [ ] Add tests covering invalid cron input
 
 ---
 
-## Issue #4: NPM Vulnerabilities (2 Critical, 1 High)
+### Issue #4: Architecture Drift Between Tasks, AMBITION, and Docs
 
-**Severity:** High — known CVEs in dependencies
-**Packages:** `vite` (3 CVEs: path traversal, `server.fs.deny` bypass, WebSocket arbitrary file read), `tough-cookie` (prototype pollution)
+**Severity:** Medium — the codebase is internally inconsistent in a way that will confuse future edits
+
+**Examples**
+
+- `oax-web/src/lib/oax-engine.ts` still tells the model that `[[TASK: ...]]` markers are appended to `AMBITION.md`
+- Actual task persistence now goes to `TASKS.md` via `appendTask()`
+- Root docs and package docs still describe `oax-web` as "Next.js 14" even though the package is on Next.js `16.2.2`
+- Several comments and doc paths still reflect the older task/reflection split
+- docs/OAX_MVP_PLAN.md should always be the ultimate authority on program architecture
 
 ### Checklist
 
-- [ ] Run `npm audit` from `oax-web/` to get the current state
-- [ ] Run `npm audit fix` to resolve non-breaking fixes (should handle `vite`)
-- [ ] If `tough-cookie` requires `--force`, evaluate whether `node-telegram-bot-api@0.67.0` is compatible — check the changelog for breaking changes
-- [ ] If the breaking upgrade is safe, run `npm audit fix --force`
-- [ ] Run `npm audit` again — confirm 0 critical, 0 high vulnerabilities
-- [ ] Run `npx vitest run` to confirm tests still pass after dependency updates
-- [ ] Run `npm run build` to confirm build still succeeds
+- [ ] Update the system prompt in `oax-web/src/lib/oax-engine.ts` so task markers describe `TASKS.md`, not `AMBITION.md`
+- [ ] Audit comments and test descriptions that still describe the pre-migration behavior
+- [ ] Update `README.md`, `oax-web/README.md`, and `docs/ARCHITECTURE.md` to reflect Next.js 16 and the current data model
+- [ ] Re-check any user-facing docs that describe AMBITION vs TASKS ownership
 
 ---
 
-## Issue #5: No Deployment Story
+### Issue #5: No Error Boundary / Recovery Screen
 
-**Severity:** High — no path from dev to production
-**Context:** OpenAlfredo requires a local Ollama instance and uses SQLite on disk. There is no Dockerfile, no Vercel config, no deploy script.
+**Severity:** Medium — a client-side crash still degrades to a poor failure mode
+
+**Current state**
+
+`oax-web/src/app/` has no `error.tsx` or `global-error.tsx`.
 
 ### Checklist
 
-- [ ] Decide the launch scope: **local-only tool** (users clone + run) vs. **hosted service**
-- [ ] If local-only: add a clear "Installation" section to the README with prerequisites (Node 22+, Ollama installed, models pulled)
-- [ ] If local-only: add a one-command bootstrap script (e.g., `oax setup` that checks Ollama, runs `npm install`, runs `prisma db push`, copies `.env.example`)
-- [ ] If hosted: create a `Dockerfile` with Ollama sidecar or document the external Ollama requirement
-- [ ] If hosted: address SQLite persistence (volume mount or migrate to PostgreSQL/Turso)
-- [ ] Document the deployment path chosen in a `docs/DEPLOYMENT.md` or in the README under "## Deployment"
+- [ ] Add `oax-web/src/app/error.tsx` for route-level recovery
+- [ ] Decide whether `global-error.tsx` is also needed
+- [ ] Show a clear reload/recovery message instead of a broken blank surface
+- [ ] Verify the fallback with an intentional throw in a client component
 
 ---
 
-## Issue #6: Lint Is Broken
+### Issue #6: Launch Scope and Security Boundary Need To Be Explicit
 
-**Severity:** Medium — CI pipeline will fail
-**Command:** `npx next lint` from `oax-web/` returns `Invalid project directory provided`
-**Root cause:** ESLint 9 flat config or `next lint` misconfiguration after the recent ESLint upgrade (commit `cc4ef71`).
+**Severity:** Medium for any broader release; Low if kept strictly local-first
+
+**Current state**
+
+- The API auth model is still a localhost bootstrap key served through `/api/auth/key`
+- The browser stores it on `window.__OAX_API_KEY`
+- There is still no rate limiting layer on the API routes
+
+This is acceptable for a single-user local tool. It is not a network-exposed auth model.
 
 ### Checklist
 
-- [ ] Check if `oax-web/eslint.config.mjs` (or `.js`) exists and is valid ESLint 9 flat config
-- [ ] If missing, create a minimal flat config: `import { dirname } from 'path'; ... export default [{ ... }]`
-- [ ] Run `npx next lint` and confirm it exits cleanly (warnings are OK, errors are not)
-- [ ] Run the full CI equivalent locally: `npm run lint && npx vitest run && npm run build`
-- [ ] Verify the `.github/workflows/ci.yml` lint step will pass with this config
+- [ ] State explicitly in the docs that the supported launch scope is local-first / single-user unless stronger auth is added
+- [ ] Document that the current API key mechanism is a local guard, not multi-user auth
+- [ ] Decide whether rate limiting is out-of-scope for local launch or should be added now
+- [ ] File a follow-up if network exposure is planned
 
 ---
 
-## Issue #7: API Key Auth Model
+### Issue #7: Telegram Pairing Behavior No Longer Matches the Older Persistence Story
 
-**Severity:** Low for local-only launch; High if ever network-exposed
-**Files:** `oax-web/src/lib/auth.ts`, `oax-web/src/app/page.tsx:40-44`
-**How it works:** A random 256-bit key is generated on first run, written to `data/.oax-api-key` (mode 0600), served to the browser via `/api/auth/key`, and sent as a Bearer token on every subsequent request.
+**Severity:** Low to Medium — user-facing behavior and docs are drifting apart
+
+**Files**
+
+- `oax-web/daemon.ts`
+- `docs/TELEGRAM_SETUP.md`
+- `docs/SECURITY.md`
+
+**Why it matters**
+
+Existing paired chats do continue to work across restarts because the allowlist persists. Users do not need to re-pair every time.
+
+The real mismatch is narrower: `oax-web/daemon.ts` currently generates a fresh pairing code on boot and enforces a five-minute expiry for future `/pair` attempts, while some repo guidance still describes the pairing code itself as durable until manual rotation.
 
 ### Checklist
 
-- [ ] If launching as local-only: document this is single-user localhost auth and why it exists (prevents accidental cross-origin requests, not multi-tenant security)
-- [ ] Add a comment or doc note: "The API key is a single-user local guard. It is not a substitute for authentication in a multi-user or network-exposed deployment."
-- [ ] Confirm `data/.oax-api-key` has mode `0600` (owner-only read/write) — it does via `auth.ts:26`
-- [ ] If the app will ever be network-accessible: design a proper auth flow (session cookies, OAuth, or similar) — file a tracking issue
-- [ ] Remove the `(window as any).__OAX_API_KEY` global in favor of a React context or cookie — file a tracking issue for future cleanup
+- [ ] Clarify in docs that allowlist pairing persists across restarts, but the pairing code for new chats is currently ephemeral
+- [ ] Decide whether pairing codes should be ephemeral-per-boot or persisted until rotated
+- [ ] Align daemon behavior, setup docs, and operational docs to one model
+- [ ] Make sure recovery/rotation instructions match the actual code path
 
 ---
 
-## Issue #8: Self-Modification — FEATURE, NOT A BUG
+### Issue #8: Model Fallback UX Is Still Fake
 
-**Severity:** N/A — this is a core design feature
-**Files:** `oax-web/src/lib/self-edit.ts`, `oax-web/src/lib/oax-engine.ts`
-**What it does:** The agent can read, surgically edit, or fully rewrite its own source code via `[[READ_FILE]]`, `[[EDIT_FILE]]`, and `[[WRITE_FILE]]` markers in its replies. Paths are sandboxed to the repo root with explicit blocklists (`.git/`, `node_modules/`, `.next/`, `data/`, `.db` files).
+**Severity:** Low — UX issue, not a launch blocker
 
-### Checklist — Document as a Feature
+**File:** `oax-web/src/app/page.tsx`
 
-- [ ] Write a `docs/SELF_MODIFICATION.md` explaining the feature, its purpose, and its safety boundaries
-- [ ] Document the three marker types with examples (READ, EDIT, WRITE)
-- [ ] Document the sandbox rules: what paths are allowed, what paths are blocked, and why
-- [ ] Document the `anyEditOk` gate on `[[RESTART_POD]]` (prevents restart loops from failed edits)
-- [ ] Document the logging: all edits are logged via `logInfo('self_edit_applied' | 'self_edit_failed', ...)`
-- [ ] Add a "Power User Warning" section: this feature gives the agent real filesystem write access — users should review edits in git diff before committing
-- [ ] Add the self-modification feature to the README under a "## Features" or "## How It Works" section
-- [ ] Reference `docs/scratchpad/SELF_MOD_TEST_PROMPTS.md` for testing the feature
+**Current behavior**
 
----
-
-## Issue #9: `gh` CLI Not Installed
-
-**Severity:** Low — local tooling gap, not a product issue
-**Context:** The `gh` CLI is not installed on this machine, so CI run history couldn't be verified during assessment.
+If `/api/models` fails, the UI falls back to `['llama3', 'mistral', 'phi3']` even though those models may not be installed.
 
 ### Checklist
 
-- [ ] Install `gh`: `brew install gh` and authenticate with `gh auth login`
-- [ ] Run `gh run list --limit 5` to check if CI has ever passed on `main`
-- [ ] If CI is failing: fix the issues (lint config, build error) and push a green build
-- [ ] If CI has never run: push to `main` or open a PR to trigger the workflow
-- [ ] Confirm the GitHub Actions workflow (`.github/workflows/ci.yml`) passes: lint, test, build
-
----
-
-## Issue #10: Single-Page Application
-
-**Severity:** Low — design choice, not a defect
-**Context:** The entire UI lives in `src/app/page.tsx` (532 lines). There's one page with modals for logs and tasks.
-
-### Checklist
-
-- [ ] Decide if this is intentional for MVP (likely yes — chat + sidebar + modals is a complete interface)
-- [ ] If launching as-is: no action needed, but document that the UI is a single-surface chat interface
-- [ ] If expanding later: file tracking issues for additional routes (e.g., `/settings`, `/agents`, `/history`)
-- [ ] Consider extracting the Task Queue modal and Runtime Logs modal into separate components for maintainability — not blocking for launch
-
----
-
-## Issue #11: Window Global for API Key
-
-**Severity:** Low — cosmetic / code quality
-**File:** `oax-web/src/app/page.tsx:18-22`
-**What it does:** `(window as any).__OAX_API_KEY` is set on bootstrap and read by `authFetch()`.
-
-### Checklist
-
-- [ ] Acknowledge this works for a single-page local app — not blocking for launch
-- [ ] File a cleanup issue: migrate to React context, a cookie, or `next-auth` session when multi-user is needed
-- [ ] No immediate action required
-
----
-
-## Issue #12: Hardcoded Fallback Models vs. Env Default
-
-**Severity:** Low — UX inconsistency
-**Files:** `oax-web/src/app/page.tsx:54` (fallback: `['llama3', 'mistral', 'phi3']`), `oax-web/.env` (default: `gemma4:26b`)
-**What happens:** If Ollama is unreachable, the dropdown shows llama3/mistral/phi3 — none of which may be installed. The env default `gemma4:26b` isn't in the fallback list.
-
-### Checklist
-
-- [ ] Change the fallback list in `page.tsx` to match a reasonable default or read from an env-exposed config
-- [ ] Alternatively, show an error state when Ollama is unreachable instead of showing fake model options
-- [ ] Confirm the dropdown works when Ollama is running (it fetches real models from `/api/models`)
-- [ ] Test the fallback path: stop Ollama, reload the page, confirm the UX is reasonable
-
----
-
-## Issue #13: No React Error Boundary
-
-**Severity:** Medium — a single JS error crashes the entire UI
-**File:** `oax-web/src/app/page.tsx` (no error boundary wrapping)
-
-### Checklist
-
-- [ ] Add a top-level error boundary component wrapping the chat interface
-- [ ] The error boundary should show a "Something went wrong — reload" message, not a white screen
-- [ ] Next.js 14+ supports `error.tsx` convention — create `src/app/error.tsx` as the global fallback
-- [ ] Test by temporarily throwing in a component — confirm the error boundary catches it
-- [ ] Optionally add `src/app/global-error.tsx` for root layout errors
-
----
-
-## Issue #14: No Rate Limiting on API Routes
-
-**Severity:** Low for local-only; High if network-exposed
-**Files:** All routes under `src/app/api/` — `chat/`, `ambition/`, `logs/`, `models/`, `onboarding/`, `transcripts/`, `auth/`
-
-### Checklist
-
-- [ ] If launching as local-only: document that rate limiting is not needed for single-user localhost
-- [ ] If the app will be network-accessible: add middleware-level rate limiting (e.g., `next-rate-limit` or a custom in-memory counter)
-- [ ] At minimum, the `/api/chat` route should have basic protection — each call hits Ollama and can saturate GPU/CPU
-- [ ] File a tracking issue for rate limiting if not implementing now
-
----
-
-## Issue #15: Minimal Prisma Schema
-
-**Severity:** Low — appropriate for current scope
-**File:** `oax-web/prisma/schema.prisma`
-**Models:** `ChatSession` (id, agentId, model, timestamps, messages) and `TranscriptEntry` (id, sessionId, role, content, searchTags, timestamp)
-
-### Checklist
-
-- [ ] Confirm the schema supports all current features (it does — chat sessions + transcript storage)
-- [ ] If multi-agent support is planned: the `agentId` field on `ChatSession` already supports it — no schema change needed
-- [ ] If user accounts are planned: file a tracking issue for a `User` model and session auth
-- [ ] Run `npx prisma db push` and confirm the schema syncs without errors
-- [ ] No immediate action required — the schema is right-sized for the current feature set
+- [ ] Replace fake fallback options with a clear "Ollama unavailable" state
+- [ ] If a fallback list is kept, make it derive from a documented default rather than static guesses
+- [ ] Verify the UX with Ollama stopped
 
 ---
 
 ## Launch Decision Matrix
 
-| Item | Blocking? | Effort | Status |
-|------|-----------|--------|--------|
-| #1 Build broken | YES | 1-2 hrs | [ ] |
-| #2 Failing test | YES | 1 hr | [ ] |
-| #3 Token hygiene | NO (gitignored) | 30 min | [ ] |
-| #4 NPM vulns | YES | 30 min | [ ] |
-| #5 Deployment story | YES | 2-4 hrs | [ ] |
-| #6 Lint broken | YES (CI fails) | 1 hr | [ ] |
-| #7 Auth model | NO (local-only) | doc only | [ ] |
-| #8 Self-modification | NO (feature) | doc only | [ ] |
-| #9 `gh` CLI | NO | 10 min | [ ] |
-| #10 Single page | NO | none | [ ] |
-| #11 Window global | NO | none | [ ] |
-| #12 Fallback models | NO | 30 min | [ ] |
-| #13 Error boundary | YES | 1 hr | [ ] |
-| #14 Rate limiting | NO (local-only) | none | [ ] |
-| #15 Schema size | NO | none | [ ] |
+| Item | Blocking? | Status |
+|---|---|---|
+| #1 Lint / CI red | YES | [ ] |
+| #2 Next.js 16 migration warnings | Probably | [ ] |
+| #3 Settings validation gap | YES | [ ] |
+| #4 Architecture / docs drift | No, but should fix | [ ] |
+| #5 Missing error boundary | No, but worth fixing | [ ] |
+| #6 Scope/security boundary docs | YES for any non-local launch | [ ] |
+| #7 Telegram pairing drift | No | [ ] |
+| #8 Model fallback UX | No | [ ] |
 
-**Minimum for launch:** Fix #1, #2, #4, #5, #6, #13. Document #8.
-**Estimated time to unblock:** 1-2 days focused work.
+---
+
+## Recommended Near-Term Order
+
+1. Fix lint failures and stop linting generated coverage output.
+2. Add settings validation so the configuration surface cannot corrupt runtime behavior.
+3. Clean up the Next.js 16 warnings (`proxy`, `turbopack.root`, tracing).
+4. Reconcile docs and system-prompt drift around `TASKS.md` vs `AMBITION.md`.
+5. Add error boundaries and polish the model-failure UX.
