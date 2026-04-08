@@ -80,6 +80,26 @@ describe('F5/F6/F7/F9/F10: 3-layer memory system', () => {
     expect(topicSlice!.content).toContain('299,792,458');
   });
 
+  it('supports legacy topic index entries that still use data/ prefixes', async () => {
+    const legacyIndex = {
+      version: '1.0',
+      topics: [
+        {
+          title: TEST_TOPIC_TITLE,
+          summary: 'legacy topic path',
+          tags: ['physics', 'light'],
+          sourcePath: `data/memory/topics/${TEST_TOPIC_SLUG}`,
+        },
+      ],
+    };
+    fs.writeFileSync(MEMORY_INDEX, JSON.stringify(legacyIndex, null, 2));
+
+    const matched = await retrieveContext(TEST_SESSION, AGENT_ID, 'light');
+    const topicSlice = matched.find((s) => s.source === 'topic');
+    expect(topicSlice).toBeDefined();
+    expect(topicSlice!.content).toContain('299,792,458');
+  });
+
   it('F10: unrelated query excludes topic (stays lightweight)', async () => {
     const unmatched = await retrieveContext(TEST_SESSION, AGENT_ID, 'recipe for pasta');
     const topicSlice = unmatched.find((s) => s.source === 'topic');

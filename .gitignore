@@ -7,6 +7,7 @@
 # ───── Runtime state (private to each user) ─────
 oax-web/data/
 !oax-web/data/.gitkeep
+oax-web/.profiles/
 
 # Root-level legacy state (pre-migration fallback)
 /AMBITION.md

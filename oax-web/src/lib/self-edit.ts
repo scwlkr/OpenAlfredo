@@ -18,7 +18,10 @@
 // EDIT_FILE is preferred (surgical). WRITE_FILE is the nuclear option.
 import fs from 'fs';
 import path from 'path';
-import { REPO_ROOT as CANONICAL_REPO_ROOT } from './paths';
+import {
+  REPO_ROOT as CANONICAL_REPO_ROOT,
+  DATA_ROOT_REPO_REL,
+} from './paths';
 
 // oax-web/ is cwd at runtime; repo root is one level up.
 export const REPO_ROOT = CANONICAL_REPO_ROOT;
@@ -26,7 +29,9 @@ export const REPO_ROOT = CANONICAL_REPO_ROOT;
 // Directories we refuse to touch, ever. Single-segment entries match at any
 // depth; slashed entries match as path prefixes from the repo root.
 const FORBIDDEN_ANY_DEPTH = ['.git', 'node_modules', '.next'];
-const FORBIDDEN_PREFIXES = ['oax-web/data', 'data'];
+const FORBIDDEN_PREFIXES = Array.from(
+  new Set([DATA_ROOT_REPO_REL, 'oax-web/data', 'data'].filter(Boolean))
+);
 const FORBIDDEN_EXTS = new Set(['.db', '.db-journal', '.sqlite', '.sqlite3']);
 
 export type SelfEdit =

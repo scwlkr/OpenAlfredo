@@ -1,10 +1,7 @@
 import { describe, it, expect, beforeEach, afterAll, beforeAll, vi } from 'vitest';
 import fs from 'fs';
-import { prisma } from '../db';
 import path from 'path';
-import { TASKS_PATH as AMBITION_PATH } from '../tasks';
-import { WORKSPACE_DIR } from '../workspace';
-import { WORKSPACE_GENERATED_DIR } from '../paths';
+import { prisma } from '../db';
 
 // Capture the onFinish promise so tests can await assistant persistence.
 let finishPromise: Promise<void> | null = null;
@@ -30,23 +27,41 @@ vi.mock('ai-sdk-ollama', () => ({
   createOllama: () => (modelName: string) => ({ __tag: 'ollama', modelName }),
 }));
 
-import { processChat } from '../oax-engine';
+type ProcessChatFn = typeof import('../oax-engine').processChat;
+let processChatFn: ProcessChatFn;
+let tasksPath = '';
+let workspaceGeneratedDir = '';
 
 const testSessionIds: string[] = [];
 
 let originalAmbition = '';
-beforeAll(() => {
-  originalAmbition = fs.existsSync(AMBITION_PATH)
-    ? fs.readFileSync(AMBITION_PATH, 'utf-8')
-    : '# AMBITION\n\n## Tasks\n';
+const originalDataRoot = process.env.OAX_DATA_ROOT;
+
+beforeAll(async () => {
+  delete process.env.OAX_DATA_ROOT;
+  vi.resetModules();
+  const tasks = await import('../tasks');
+  tasksPath = tasks.TASKS_PATH;
+  originalAmbition = fs.existsSync(tasksPath)
+    ? fs.readFileSync(tasksPath, 'utf-8')
+    : '# Tasks\n\n## Tasks\n';
 });
 
-beforeEach(() => {
+beforeEach(async () => {
+  delete process.env.OAX_DATA_ROOT;
+  vi.resetModules();
+  const tasks = await import('../tasks');
+  const engine = await import('../oax-engine');
+  const paths = await import('../paths');
+
+  tasksPath = tasks.TASKS_PATH;
+  workspaceGeneratedDir = paths.WORKSPACE_GENERATED_DIR;
+  processChatFn = engine.processChat;
   finishPromise = null;
   lastCall.model = undefined;
   lastCall.messages = undefined;
   nextReply = 'Mocked assistant reply';
-  fs.writeFileSync(AMBITION_PATH, originalAmbition);
+  fs.writeFileSync(tasksPath, originalAmbition);
 });
 
 afterAll(async () => {
@@ -54,7 +69,12 @@ afterAll(async () => {
     await prisma.transcriptEntry.deleteMany({ where: { sessionId: { in: testSessionIds } } });
     await prisma.chatSession.deleteMany({ where: { id: { in: testSessionIds } } });
   }
-  fs.writeFileSync(AMBITION_PATH, originalAmbition);
+  if (originalDataRoot === undefined) {
+    delete process.env.OAX_DATA_ROOT;
+  } else {
+    process.env.OAX_DATA_ROOT = originalDataRoot;
+  }
+  fs.writeFileSync(tasksPath, originalAmbition);
   await prisma.$disconnect();
 });
 
@@ -63,7 +83,7 @@ describe('F3: Web chat API end-to-end', () => {
     const sessionId = 'test-f3-' + Math.random().toString(36).slice(2, 10);
     testSessionIds.push(sessionId);
 
-    const res = await processChat(sessionId, 'What is the speed of light?', 'llama3');
+    const res = await processChatFn(sessionId, 'What is the speed of light?', 'llama3');
     expect(res).toBeInstanceOf(Response);
     await finishPromise;
 
@@ -87,7 +107,7 @@ describe('F3: Web chat API end-to-end', () => {
     const sessionId = 'test-f3b-' + Math.random().toString(36).slice(2, 10);
     testSessionIds.push(sessionId);
 
-    await processChat(sessionId, 'Hello', 'llama3');
+    await processChatFn(sessionId, 'Hello', 'llama3');
     await finishPromise;
 
     expect(lastCall.messages).toBeDefined();
@@ -105,7 +125,7 @@ describe('F4: Ollama model switching', () => {
     const sessionId = 'test-f4-' + Math.random().toString(36).slice(2, 10);
     testSessionIds.push(sessionId);
 
-    await processChat(sessionId, 'hey', 'mistral');
+    await processChatFn(sessionId, 'hey', 'mistral');
     await finishPromise;
 
     expect(lastCall.model).toEqual({ __tag: 'ollama', modelName: 'mistral' });
@@ -120,10 +140,10 @@ describe('F4: Ollama model switching', () => {
     const sessionId = 'test-f13-' + Math.random().toString(36).slice(2, 10);
     testSessionIds.push(sessionId);
 
-    await processChat(sessionId, 'remind me to call the vet', 'llama3');
+    await processChatFn(sessionId, 'remind me to call the vet', 'llama3');
     await finishPromise;
 
-    const ambition = fs.readFileSync(AMBITION_PATH, 'utf-8');
+    const ambition = fs.readFileSync(tasksPath, 'utf-8');
     expect(ambition).toContain(`${marker} call the vet`);
 
     const entries = await prisma.transcriptEntry.findMany({
@@ -139,10 +159,10 @@ describe('F4: Ollama model switching', () => {
     const sessionId = 'test-f14-' + Math.random().toString(36).slice(2, 10);
     testSessionIds.push(sessionId);
 
-    await processChat(sessionId, 'date next week — remind me day before to book', 'llama3');
+    await processChatFn(sessionId, 'date next week — remind me day before to book', 'llama3');
     await finishPromise;
 
-    const ambition = fs.readFileSync(AMBITION_PATH, 'utf-8');
+    const ambition = fs.readFileSync(tasksPath, 'utf-8');
     expect(ambition).toContain(`${marker} book dinner |when:2026-04-11T18:00:00Z`);
   });
 
@@ -152,10 +172,10 @@ describe('F4: Ollama model switching', () => {
     const sessionId = 'test-f15-' + Math.random().toString(36).slice(2, 10);
     testSessionIds.push(sessionId);
 
-    await processChat(sessionId, 'write a business plan', 'llama3');
+    await processChatFn(sessionId, 'write a business plan', 'llama3');
     await finishPromise;
 
-    const filePath = path.join(WORKSPACE_GENERATED_DIR, slug);
+    const filePath = path.join(workspaceGeneratedDir, slug);
     expect(fs.existsSync(filePath)).toBe(true);
     expect(fs.readFileSync(filePath, 'utf-8')).toContain('Dolphins.');
     fs.unlinkSync(filePath);
@@ -173,7 +193,7 @@ describe('F4: Ollama model switching', () => {
     const sessionId = 'test-f4b-' + Math.random().toString(36).slice(2, 10);
     testSessionIds.push(sessionId);
 
-    await processChat(sessionId, 'hey');
+    await processChatFn(sessionId, 'hey');
     await finishPromise;
 
     expect(lastCall.model).toEqual({

@@ -24,8 +24,9 @@ Most AI chat tools forget everything the moment you close the tab. OpenAlfredo i
 ollama pull llama3
 git clone https://github.com/scwlkr/OpenAlfredo.git
 cd OpenAlfredo
-npm install           # runs bootstrap automatically
+npm install
 cd oax-web && npm install
+node bin/bootstrap.js # creates runtime state, .env, database, API key
 npm link              # installs `oax` CLI globally (optional)
 oax pod               # starts web UI + daemon
 # -> open http://localhost:3000
@@ -53,10 +54,12 @@ For the full picture see [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md).
 - **Web UI** — chat, model selector, task queue, workspace browser, reflection panel, settings
 - **Telegram bot** — pairing, per-chat model selection, proactive alerts, morning briefs
 - **CLI** — `oax pod` starts/stops/monitors the full stack
+- **Sandbox profiles** — `oax dev start/reset` spins up disposable web-only profiles for onboarding and functionality checks
 
 ## Documentation
 
 - [Quick Start](docs/QUICKSTART.md) — get running in 5 minutes
+- [DevOps Guide](docs/DEVOPS.md) — bootstrap, sandbox profiles, and local operational workflows
 - [Architecture](docs/ARCHITECTURE.md) — system design and data flow
 - [API Reference](docs/API.md) — all HTTP endpoints
 - [Golden Goose](docs/GOLDEN_GOOSE.md) — adaptive behavior loop

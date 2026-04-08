@@ -16,6 +16,12 @@ import SettingsPanel from '@/components/SettingsPanel';
 const surfaceCard =
   'border border-[var(--oax-edge)] bg-[var(--oax-shell)] shadow-[0_24px_60px_-32px_var(--oax-shadow)]';
 
+const DEV_SESSION_ID = process.env.NEXT_PUBLIC_OAX_DEV_SESSION_ID;
+
+function nextSessionId() {
+  return DEV_SESSION_ID || crypto.randomUUID();
+}
+
 export default function Home() {
   const [onboarding, setOnboarding] = useState(true);
   const [loading, setLoading] = useState(true);
@@ -61,7 +67,7 @@ export default function Home() {
           .then(res => res.json())
           .then(data => {
             setOnboarding(!data.exists);
-            if (data.exists) setSessionId(crypto.randomUUID());
+            if (data.exists) setSessionId(nextSessionId());
             setLoading(false);
           });
       })
@@ -124,7 +130,7 @@ export default function Home() {
         surfaceCard={surfaceCard}
         onComplete={() => {
           setOnboarding(false);
-          setSessionId(crypto.randomUUID());
+          setSessionId(nextSessionId());
         }}
       />
     );

@@ -5,8 +5,16 @@ const { hideBin } = require('yargs/helpers');
 const { spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
+const {
+  OAX_WEB,
+  ensureWebEnvFile,
+  sanitizeProfileName,
+  profilePaths,
+  resetProfileFixture,
+  buildSandboxEnv,
+  profileExists,
+} = require('./profile-state');
 
-const OAX_WEB = path.join(__dirname, '..', 'oax-web');
 const DATA_DIR = path.join(OAX_WEB, 'data');
 const LOG_DIR = path.join(DATA_DIR, 'logs');
 const PID_FILE = path.join(DATA_DIR, '.oax-pod.json');
@@ -44,6 +52,13 @@ async function waitForOllama(timeoutMs = 20000) {
 function readPodState() {
   try { return JSON.parse(fs.readFileSync(PID_FILE, 'utf-8')); }
   catch { return null; }
+}
+function readNextDevLock() {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(OAX_WEB, '.next', 'dev', 'lock'), 'utf-8'));
+  } catch {
+    return null;
+  }
 }
 function writePodState(state) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -232,6 +247,66 @@ function printPairingCode() {
   }
 }
 
+async function ensureSandboxProfile(profile, fixture, reset) {
+  ensureWebEnvFile();
+  const safeProfile = sanitizeProfileName(profile);
+  if (reset || !profileExists(safeProfile)) {
+    await resetProfileFixture(safeProfile, fixture);
+  }
+  return safeProfile;
+}
+
+async function startSandbox({ profile, fixture, reset, port }) {
+  const safeProfile = await ensureSandboxProfile(profile, fixture, reset);
+  const env = buildSandboxEnv(safeProfile, { port });
+  const { dataDir, envPath } = profilePaths(safeProfile);
+  const url = `http://127.0.0.1:${port}`;
+  const activeDev = readNextDevLock();
+
+  if (activeDev?.pid && isAlive(activeDev.pid)) {
+    console.error('Another `next dev` server is already running for oax-web/.');
+    console.error(`   PID:  ${activeDev.pid}`);
+    console.error(`   URL:  ${activeDev.appUrl || `http://${activeDev.hostname || '127.0.0.1'}:${activeDev.port || 3000}`}`);
+    console.error('');
+    console.error('Stop that server before starting a sandbox profile from the same checkout.');
+    console.error('Your personal profile is preserved; only the running dev server conflicts.');
+    process.exit(1);
+  }
+
+  console.log(`Starting OAX sandbox profile "${safeProfile}"...`);
+  console.log(`   Fixture: ${fixture}`);
+  console.log(`   Port:    ${port}`);
+  console.log(`   Data:    ${path.relative(path.join(__dirname, '..'), dataDir)}`);
+  console.log(`   Env:     ${path.relative(path.join(__dirname, '..'), envPath)}`);
+
+  const nextProcess = spawn('npm', ['run', 'dev'], {
+    cwd: OAX_WEB,
+    stdio: 'inherit',
+    env,
+  });
+
+  setTimeout(async () => {
+    console.log(`Opening sandbox at ${url} ...`);
+    try {
+      const { default: openBrowser } = await import('open');
+      await openBrowser(url);
+    } catch (err) {
+      console.error('Failed to open browser: ', err);
+    }
+  }, 2500);
+
+  nextProcess.on('close', (code) => process.exit(code ?? 0));
+}
+
+async function resetSandbox({ profile, fixture }) {
+  const safeProfile = sanitizeProfileName(profile);
+  ensureWebEnvFile();
+  const { dataDir, envPath } = await resetProfileFixture(safeProfile, fixture);
+  console.log(`Reset sandbox profile "${safeProfile}" with fixture "${fixture}".`);
+  console.log(`   Data: ${path.relative(path.join(__dirname, '..'), dataDir)}`);
+  console.log(`   Env:  ${path.relative(path.join(__dirname, '..'), envPath)}`);
+}
+
 yargs(hideBin(process.argv))
   .scriptName('oax')
   .completion('completion', 'Generate completion script for zsh/bash')
@@ -261,6 +336,52 @@ yargs(hideBin(process.argv))
       if (argv.action === 'stop') return await stopPod();
       if (argv.action === 'status') return podStatus();
       await startPod();
+    }
+  )
+  .command(
+    'dev <action>',
+    'Start or reset a disposable web-only sandbox profile',
+    (y) =>
+      y
+        .positional('action', {
+          describe: 'start | reset',
+          choices: ['start', 'reset'],
+          default: 'start',
+        })
+        .option('profile', {
+          type: 'string',
+          default: 'sandbox',
+          describe: 'Sandbox profile name',
+        })
+        .option('fixture', {
+          type: 'string',
+          choices: ['blank', 'seeded', 'returning'],
+          default: 'blank',
+          describe: 'Fixture to apply to the sandbox profile',
+        })
+        .option('reset', {
+          type: 'boolean',
+          default: false,
+          describe: 'Reset the sandbox profile before starting',
+        })
+        .option('port', {
+          type: 'number',
+          default: 3001,
+          describe: 'Port for the sandbox web server',
+        }),
+    async (argv) => {
+      if (argv.action === 'reset') {
+        return await resetSandbox({
+          profile: argv.profile,
+          fixture: argv.fixture,
+        });
+      }
+      await startSandbox({
+        profile: argv.profile,
+        fixture: argv.fixture,
+        reset: argv.reset,
+        port: argv.port,
+      });
     }
   )
   .command('pair', 'Show the current Telegram pairing code', () => {}, () => printPairingCode())

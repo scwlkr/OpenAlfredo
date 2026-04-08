@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
+import { AGENTS_DIR } from '@/lib/paths';
 
 export async function POST(request: Request) {
   try {
@@ -21,7 +22,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const agentDir = path.join(process.cwd(), 'data', 'agents', safeAgentId);
+    const agentDir = path.join(AGENTS_DIR, safeAgentId);
     if (!fs.existsSync(agentDir)) {
       fs.mkdirSync(agentDir, { recursive: true });
     }
@@ -59,7 +60,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ exists: false });
   }
 
-  const agentDir = path.join(process.cwd(), 'data', 'agents', safeAgentId);
+  const agentDir = path.join(AGENTS_DIR, safeAgentId);
   const exists = fs.existsSync(path.join(agentDir, 'SOUL.md'));
   return NextResponse.json({ exists });
 }

@@ -2,8 +2,7 @@ import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
 import { logInfo, logError } from '@/lib/logger';
-
-const ENV_PATH = path.join(process.cwd(), '.env');
+import { RUNTIME_ENV_PATH as ENV_PATH } from '@/lib/paths';
 
 // Settings we allow reading/writing through the API.
 const ALLOWED_KEYS = new Set([
@@ -58,6 +57,7 @@ function writeEnvFile(values: Record<string, string>): void {
     }
   }
 
+  fs.mkdirSync(path.dirname(ENV_PATH), { recursive: true });
   fs.writeFileSync(ENV_PATH, content);
 }
 

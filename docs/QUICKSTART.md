@@ -34,9 +34,11 @@ This launches three processes:
 ## First Interaction
 
 1. Open `http://localhost:3000` in your browser
-2. Complete the **onboarding form** — give Alfredo a persona and goals
-3. This creates `SOUL.md`, the agent's persistent identity
-4. Start chatting — Alfredo remembers context across sessions
+2. The default profile uses the bootstrapped `oax-web/data/agents/default/SOUL.md`
+3. Edit that SOUL or start chatting right away
+4. Alfredo will keep using that profile across future sessions
+
+Developer-only operational workflows such as sandbox profiles and repeatable onboarding resets live in [DEVOPS.md](DEVOPS.md).
 
 ## What You Can Do
 

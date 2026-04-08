@@ -19,13 +19,14 @@
 
 const fs = require('fs');
 const path = require('path');
-const crypto = require('crypto');
-const { execSync } = require('child_process');
-
-const REPO_ROOT = path.resolve(__dirname, '..');
-const OAX_WEB = path.join(REPO_ROOT, 'oax-web');
-const DATA_DIR = path.join(OAX_WEB, 'data');
-const EXAMPLES_DIR = path.join(REPO_ROOT, 'examples');
+const {
+  REPO_ROOT,
+  OAX_WEB,
+  BASE_DATA_DIR: DATA_DIR,
+  ensureWebEnvFile,
+  createDataScaffold,
+  ensureDatabase,
+} = require('./profile-state');
 
 const args = process.argv.slice(2);
 const FORCE = args.includes('--force');
@@ -45,85 +46,11 @@ function requireOaxWeb() {
   if (!fs.existsSync(OAX_WEB)) die(`oax-web/ not found at ${OAX_WEB}`);
 }
 
-// Step helpers ─────────────────────────────────────────────────────────────
-function ensureDir(p) {
-  fs.mkdirSync(p, { recursive: true });
-}
-
-function copyTemplate(src, dest, label) {
-  if (!fs.existsSync(src)) {
-    warn(`  ! template missing: ${path.relative(REPO_ROOT, src)} — skipping ${label}`);
-    return false;
-  }
-  if (fs.existsSync(dest) && !FORCE) {
-    log(`  ✓ ${label} already present at ${path.relative(REPO_ROOT, dest)}`);
-    return false;
-  }
-  ensureDir(path.dirname(dest));
-  fs.copyFileSync(src, dest);
-  log(`  → copied ${label} to ${path.relative(REPO_ROOT, dest)}`);
-  return true;
-}
-
-function writeIfMissing(dest, content, label) {
-  if (fs.existsSync(dest) && !FORCE) {
-    log(`  ✓ ${label} already present`);
-    return false;
-  }
-  ensureDir(path.dirname(dest));
-  fs.writeFileSync(dest, content);
-  log(`  → wrote ${label}`);
-  return true;
-}
-
-function stepCreateDirs() {
-  log('• ensuring data subtree…');
-  for (const sub of ['agents/default', 'memory/topics', 'workspace', 'workspace/desk', 'workspace/files', 'workspace/generated', 'logs']) {
-    ensureDir(path.join(DATA_DIR, sub));
-  }
-  log('  ✓ data/ subtree ready');
-}
-
-function stepCopyTemplates() {
-  log('• copying templates…');
-  copyTemplate(
-    path.join(EXAMPLES_DIR, 'SOUL.example.md'),
-    path.join(DATA_DIR, 'agents', 'default', 'SOUL.md'),
-    'SOUL'
-  );
-  copyTemplate(
-    path.join(EXAMPLES_DIR, 'AMBITION.example.md'),
-    path.join(DATA_DIR, 'AMBITION.md'),
-    'AMBITION'
-  );
-  copyTemplate(
-    path.join(EXAMPLES_DIR, 'TASKS.example.md'),
-    path.join(DATA_DIR, 'TASKS.md'),
-    'TASKS'
-  );
-  // Empty index.json so memory-retrieval starts clean.
-  writeIfMissing(
-    path.join(DATA_DIR, 'memory', 'index.json'),
-    JSON.stringify({ version: '1.0', topics: [] }, null, 2),
-    'memory index'
-  );
-  // Empty heartbeat log scaffold with the markers the daemon expects.
-  const restlessLog =
-    '# RESTLESS Heartbeat Log\n\n' +
-    'Append-only log of the agent\'s heartbeat ticks. See `docs/RESTLESS.md` for\n' +
-    'the protocol. Trimmed to the most recent 50 entries.\n\n' +
-    '<!-- heartbeat-log-start -->\n<!-- heartbeat-log-end -->\n';
-  writeIfMissing(path.join(DATA_DIR, 'RESTLESS.log.md'), restlessLog, 'heartbeat log');
-}
-
 function stepCopyEnv() {
   log('• copying .env.example → .env (if missing)…');
-  const webEnvEx = path.join(OAX_WEB, '.env.example');
-  const webEnv = path.join(OAX_WEB, '.env');
-  if (fs.existsSync(webEnvEx) && (!fs.existsSync(webEnv) || FORCE)) {
-    fs.copyFileSync(webEnvEx, webEnv);
+  if (ensureWebEnvFile({ force: FORCE })) {
     log('  → oax-web/.env created from template');
-  } else if (fs.existsSync(webEnv)) {
+  } else if (fs.existsSync(path.join(OAX_WEB, '.env'))) {
     log('  ✓ oax-web/.env already present');
   } else {
     warn('  ! oax-web/.env.example not found — skipping');
@@ -132,31 +59,28 @@ function stepCopyEnv() {
 
 function stepPrisma() {
   log('• prisma setup…');
-  const db = path.join(DATA_DIR, 'oax.db');
-  if (fs.existsSync(db) && !FORCE) {
+  if (fs.existsSync(path.join(DATA_DIR, 'oax.db')) && !FORCE) {
     log('  ✓ oax-web/data/oax.db already present');
     return;
   }
   try {
-    execSync('npx prisma generate', { cwd: OAX_WEB, stdio: QUIET ? 'pipe' : 'inherit' });
-    execSync('npx prisma db push', { cwd: OAX_WEB, stdio: QUIET ? 'pipe' : 'inherit' });
+    ensureDatabase({
+      dataDir: DATA_DIR,
+      databaseUrl: 'file:./data/oax.db',
+      force: FORCE,
+      generate: true,
+      quiet: QUIET,
+    });
     log('  → prisma: client generated + schema pushed');
   } catch (e) {
     warn('  ! prisma setup failed — run `cd oax-web && npx prisma generate && npx prisma db push` manually');
   }
 }
 
-function stepApiKey() {
-  log('• api key…');
-  const keyFile = path.join(DATA_DIR, '.oax-api-key');
-  if (fs.existsSync(keyFile) && !FORCE) {
-    log('  ✓ api key already present');
-    return;
-  }
-  const key = crypto.randomBytes(32).toString('hex');
-  ensureDir(DATA_DIR);
-  fs.writeFileSync(keyFile, key, { mode: 0o600 });
-  log('  → wrote oax-web/data/.oax-api-key (0600)');
+function stepDataScaffold() {
+  log('• ensuring data subtree…');
+  createDataScaffold(DATA_DIR, { force: FORCE });
+  log('  ✓ data/ subtree ready');
 }
 
 function printBanner() {
@@ -205,9 +129,7 @@ requireOaxWeb();
 if (CHECK) runCheck();
 
 log('OAX bootstrap' + (FORCE ? ' (force)' : '') + '…');
-stepCreateDirs();
-stepCopyTemplates();
+stepDataScaffold();
 stepCopyEnv();
 stepPrisma();
-stepApiKey();
 printBanner();

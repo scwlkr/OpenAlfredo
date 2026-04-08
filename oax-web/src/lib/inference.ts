@@ -6,6 +6,7 @@
 // on the results.
 
 import fs from 'fs';
+import path from 'path';
 import { prisma } from './db';
 import { THEMES_FILE, DEFAULT_SOUL_PATH } from './paths';
 import { logInfo } from './logger';
@@ -35,6 +36,7 @@ export function readThemes(): ThemesData {
 }
 
 export function writeThemes(data: ThemesData): void {
+  fs.mkdirSync(path.dirname(THEMES_FILE), { recursive: true });
   fs.writeFileSync(THEMES_FILE, JSON.stringify(data, null, 2));
 }
 

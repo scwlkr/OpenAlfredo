@@ -3,17 +3,13 @@ import path from 'path';
 import { prisma } from './db';
 import { logInfo, logError } from './logger';
 import {
-  WEB_ROOT,
   AGENTS_DIR,
   MEMORY_DIR,
   MEMORY_INDEX_FILE,
   TOPICS_DIR,
   THEMES_FILE,
+  resolveTopicSourcePath,
 } from './paths';
-
-// `topic.sourcePath` in the index is stored as a oax-web-relative path
-// (e.g. "data/memory/topics/foo.md") so keep ROOT_DIR = WEB_ROOT for join.
-const ROOT_DIR = WEB_ROOT;
 
 // Initialize directories
 [AGENTS_DIR, MEMORY_DIR, TOPICS_DIR].forEach((dir) => {
@@ -66,10 +62,10 @@ export async function retrieveContext(sessionId: string, agentId: string, query:
     if (indexData.topics) {
       for (const topic of indexData.topics) {
         if (terms.some(t => topic.tags?.includes(t) || topic.title.toLowerCase().includes(t))) {
-            const topicPath = path.join(ROOT_DIR, topic.sourcePath);
-            // Validate that resolved path stays inside ROOT_DIR (prevent path traversal)
+            const topicPath = resolveTopicSourcePath(topic.sourcePath);
+            // Validate that resolved path stays inside DATA_ROOT (prevent path traversal)
             const resolved = path.resolve(topicPath);
-            if (!resolved.startsWith(path.resolve(ROOT_DIR) + path.sep)) continue;
+            if (!resolved.startsWith(path.resolve(MEMORY_DIR) + path.sep)) continue;
             if (fs.existsSync(topicPath)) {
                slices.push({
                  source: 'topic',
@@ -113,6 +109,7 @@ export async function retrieveContext(sessionId: string, agentId: string, query:
 export async function saveTopic(title: string, content: string, tags: string[]) {
   const safeFilename = title.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '.md';
   const filePath = path.join(TOPICS_DIR, safeFilename);
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
   fs.writeFileSync(filePath, content);
 
   const indexData = JSON.parse(fs.readFileSync(MEMORY_INDEX_FILE, 'utf-8'));
@@ -122,7 +119,7 @@ export async function saveTopic(title: string, content: string, tags: string[]) 
     title,
     summary: content.substring(0, 100),
     tags,
-    sourcePath: `data/memory/topics/${safeFilename}`
+    sourcePath: `memory/topics/${safeFilename}`
   });
 
   fs.writeFileSync(MEMORY_INDEX_FILE, JSON.stringify(indexData, null, 2));
