@@ -63,6 +63,7 @@ For the full picture see [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md).
 - [Architecture](docs/ARCHITECTURE.md) — system design and data flow
 - [API Reference](docs/API.md) — all HTTP endpoints
 - [Golden Goose](docs/GOLDEN_GOOSE.md) — adaptive behavior loop
+- [CI Debugging Runbook](docs/runbooks/ci-debugging.md) — exact workflow for GitHub Actions, Prisma, and SQLite failures
 - [Testing Guide](docs/TESTING.md) — run and write tests
 - [Telegram Setup](docs/TELEGRAM_SETUP.md) — wire up the Telegram bot
 - [Security](docs/SECURITY.md) — path sandboxing and token storage

@@ -29,6 +29,8 @@ npm run db:push              # sync schema to the runtime SQLite database
 npm run db:generate          # regenerate prisma client against the runtime DB path
 ```
 
+For GitHub Actions, Prisma, or SQLite path failures, start with `docs/runbooks/ci-debugging.md`.
+
 ### `oax` CLI (repo root)
 
 ```bash
