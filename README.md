@@ -47,6 +47,7 @@ For the full picture see [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md).
 - **Structured workspace** — desk (sticky notes, ideas), files (user materials), generated (Alfredo's outputs)
 - **AMBITION reflection** — daily LLM-generated morning brief synthesizing your trajectory and themes
 - **RESTLESS heartbeat** — configurable background loop where Alfredo wakes up, reflects, and acts
+- **Golden Goose** — adaptive continuity loop that extracts themes from conversations and autonomously creates follow-up tasks, notes, and documents
 - **Dual delivery** — generated artifacts are saved to workspace AND shown inline in chat
 - **Self-modification** — Alfredo can read and edit its own source code (sandboxed)
 - **Web UI** — chat, model selector, task queue, workspace browser, reflection panel, settings
@@ -58,6 +59,7 @@ For the full picture see [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md).
 - [Quick Start](docs/QUICKSTART.md) — get running in 5 minutes
 - [Architecture](docs/ARCHITECTURE.md) — system design and data flow
 - [API Reference](docs/API.md) — all HTTP endpoints
+- [Golden Goose](docs/GOLDEN_GOOSE.md) — adaptive behavior loop
 - [Testing Guide](docs/TESTING.md) — run and write tests
 - [Telegram Setup](docs/TELEGRAM_SETUP.md) — wire up the Telegram bot
 - [Security](docs/SECURITY.md) — path sandboxing and token storage

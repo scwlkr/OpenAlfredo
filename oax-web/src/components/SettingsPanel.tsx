@@ -154,6 +154,48 @@ export default function SettingsPanel({ surfaceCard, onClose }: SettingsPanelPro
             </div>
           </div>
 
+          {/* Continuity Loop (Golden Goose) */}
+          <div>
+            <h3 className="text-sm font-medium text-[var(--oax-ink)] mb-2">Continuity Loop</h3>
+            <p className="text-xs text-[var(--oax-muted)] mb-3">The adaptive behavior chain — extracts themes from your conversations and autonomously creates follow-up tasks, notes, and documents.</p>
+            <div className="flex items-center gap-2 mb-2">
+              <label className="text-xs text-[var(--oax-muted)] w-16">Active:</label>
+              <button
+                onClick={() => updateSetting('CONTINUITY_ACTIVE', settings.CONTINUITY_ACTIVE === 'true' ? 'false' : 'true')}
+                className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                  settings.CONTINUITY_ACTIVE !== 'false'
+                    ? 'bg-[var(--oax-basil)] text-white'
+                    : 'bg-[#ece4d5] text-[var(--oax-muted)]'
+                }`}
+              >{settings.CONTINUITY_ACTIVE !== 'false' ? 'On' : 'Off'}</button>
+            </div>
+            <div className="flex items-center gap-2 mb-2">
+              <label className="text-xs text-[var(--oax-muted)] w-16">Cron:</label>
+              <input
+                type="text"
+                value={settings.CONTINUITY_CRON || '0 10,16 * * *'}
+                onChange={e => updateSetting('CONTINUITY_CRON', e.target.value)}
+                className="flex-1 rounded-xl border border-[var(--oax-edge)] bg-[var(--oax-shell)] p-2 text-sm font-mono outline-none focus:ring-1 focus:ring-[var(--oax-basil)]"
+              />
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {[
+                { label: 'Twice daily', value: '0 10,16 * * *' },
+                { label: 'Three times daily', value: '0 8,13,18 * * *' },
+                { label: 'Every 4 hours', value: '0 */4 * * *' },
+                { label: 'Daily at noon', value: '0 12 * * *' },
+              ].map(p => (
+                <button key={p.value} onClick={() => updateSetting('CONTINUITY_CRON', p.value)}
+                  className={`rounded-lg px-2.5 py-1 text-xs transition-colors ${
+                    settings.CONTINUITY_CRON === p.value
+                      ? 'bg-[var(--oax-basil)] text-white'
+                      : 'bg-[#f3ebdc] text-[var(--oax-muted)] hover:bg-[#ece4d5]'
+                  }`}
+                >{p.label}</button>
+              ))}
+            </div>
+          </div>
+
           {/* Task Check */}
           <div>
             <h3 className="text-sm font-medium text-[var(--oax-ink)] mb-2">Task Check Interval</h3>

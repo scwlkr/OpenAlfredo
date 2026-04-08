@@ -40,6 +40,9 @@ export const API_KEY_FILE = path.join(DATA_ROOT, '.oax-api-key');
 export const LEGACY_AMBITION_PATH = path.join(REPO_ROOT, 'AMBITION.md');
 export const LEGACY_RESTLESS_PATH = path.join(REPO_ROOT, 'RESTLESS.md');
 
+// Theme persistence for the continuity loop (Golden Goose).
+export const THEMES_FILE = path.join(DATA_ROOT, 'themes.json');
+
 // Default agent id for the single-user prototype.
 export const DEFAULT_AGENT_ID = 'default';
 export const DEFAULT_SOUL_PATH = path.join(AGENTS_DIR, DEFAULT_AGENT_ID, 'SOUL.md');

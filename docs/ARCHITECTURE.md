@@ -85,23 +85,33 @@ All retrievals log to `oax-web/data/logs/oax-<date>.jsonl` via
 ```mermaid
 flowchart LR
   D[daemon.ts] --> TG[Telegram bot<br/>polling]
-  D --> CA[AMBITION cron<br/>*/30 * * * *]
+  D --> CA[Task cron<br/>*/30 * * * *]
   D --> CH[RESTLESS heartbeat<br/>0 * * * *]
-  CA -->|dueTasks| A[(data/AMBITION.md)]
+  D --> CR[Reflection cron<br/>0 7 * * *]
+  D --> CL[Continuity loop<br/>0 10,16 * * *]
+  CA -->|dueTasks| T[(data/TASKS.md)]
   CA -->|NOTIFY| TG
   CH -->|generate| O[Ollama]
   CH -->|[[NOTIFY]] / [[TASK]] / [[REFLECT]] / [[REST]]| L[(data/RESTLESS.log.md)]
-  CH -->|[[TASK]]| A
+  CH -->|[[TASK]]| T
   CH -->|[[NOTIFY]]| TG
+  CR -->|generateReflection| A[(data/AMBITION.md)]
+  CR -->|morning brief| TG
+  CL -->|runContinuityLoop| TH[(data/themes.json)]
+  CL -->|artifacts| TG
 ```
 
 
 
-- **AMBITION cron**: deterministic, no LLM. `dueTasks()` returns tasks whose
+- **Task cron**: deterministic, no LLM. `dueTasks()` returns tasks whose
 `|when:<ISO>` fires inside the last 30 minutes.
-- **RESTLESS heartbeat**: LLM-driven. Reads SOUL + AMBITION + last 10
-heartbeat entries, emits `[[NOTIFY]]` / `[[TASK]]` / `[[REFLECT]]` /
+- **RESTLESS heartbeat**: LLM-driven. Reads SOUL + AMBITION + tasks + themes +
+last 10 heartbeat entries, emits `[[NOTIFY]]` / `[[TASK]]` / `[[REFLECT]]` /
 `[[REST]]` markers.
+- **Reflection cron**: LLM-driven. Synthesizes SOUL + transcripts + themes +
+workspace activity into a flowing morning brief. Writes to AMBITION.md.
+- **Continuity loop**: LLM-driven. Extracts themes, infers follow-ups,
+creates tasks/stickies/files autonomously. See [GOLDEN_GOOSE.md](GOLDEN_GOOSE.md).
 
 ---
 
@@ -122,6 +132,41 @@ flowchart TD
 `bin/oax.js` spawns all three detached, streams logs (`[ollama] [web] [daemon]` prefixes) to stdout + mirrors to `oax-web/data/logs/pod-*.log`,
 and writes a PID manifest to `oax-web/data/.oax-pod.json`. `oax pod stop`
 SIGTERMs each process group (then SIGKILL sweep).
+
+---
+
+## Continuity Loop (Golden Goose)
+
+```mermaid
+flowchart TD
+  T[Transcripts<br/>last 50 entries] --> EX[extractThemes<br/>inference.ts]
+  EX -->|3-5 tags| MG[mergeThemes<br/>boost / decay]
+  MG --> TF[(data/themes.json)]
+  TF --> IF[inferFollowUps<br/>inference.ts]
+  SOUL[(SOUL.md)] --> IF
+  IF -->|task| TK[appendTask → TASKS.md]
+  IF -->|sticky| SK[saveSticky → desk/]
+  IF -->|file| WF[saveWorkspaceFile → generated/]
+  TF -->|active themes| REF[generateReflection → AMBITION.md]
+  TF -->|active themes| HB[runHeartbeat system prompt]
+  TF -->|active themes| MEM[retrieveContext → chat context]
+```
+
+The proactive continuity loop runs on `CONTINUITY_CRON` (default: twice daily
+at 10am and 4pm). See [GOLDEN_GOOSE.md](GOLDEN_GOOSE.md) for the full design.
+
+**Theme lifecycle**: new themes start at strength 0.6, boost +0.15 each cycle
+they reappear, decay -0.05 each cycle absent, fade entirely when >7 days
+stale or strength <0.1.
+
+**Integration points**:
+- **Reflection** — active themes feed into `buildReflectionPrompt()` so
+  AMBITION.md reflects evolving interests
+- **Heartbeat** — themes appear in the heartbeat system prompt so NOTIFY/TASK
+  decisions are theme-aware
+- **Memory retrieval** — themes are injected as a context slice so the chat
+  engine knows active interests in fresh sessions
+- **Telegram** — daemon sends alerts when new artifacts are created
 
 ---
 
@@ -178,10 +223,15 @@ All mutable-state paths live in `oax-web/src/lib/paths.ts`:
 ```ts
 DATA_ROOT            = oax-web/data/
 AMBITION_PATH        = data/AMBITION.md
+TASKS_PATH           = data/TASKS.md
+THEMES_FILE          = data/themes.json
 RESTLESS_LOG_PATH    = data/RESTLESS.log.md
 AGENTS_DIR           = data/agents/
 MEMORY_DIR           = data/memory/
 WORKSPACE_DIR        = data/workspace/
+  WORKSPACE_DESK_DIR     = data/workspace/desk/
+  WORKSPACE_FILES_DIR    = data/workspace/files/
+  WORKSPACE_GENERATED_DIR = data/workspace/generated/
 LOGS_DIR             = data/logs/
 API_KEY_FILE         = data/.oax-api-key
 DEFAULT_SOUL_PATH    = data/agents/default/SOUL.md

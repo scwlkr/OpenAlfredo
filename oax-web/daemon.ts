@@ -10,6 +10,7 @@ import { chatWithAgent, checkCronTasks, runHeartbeat } from './src/lib/oax';
 import { readAmbition } from './src/lib/ambition';
 import { readTasks } from './src/lib/tasks';
 import { generateReflection } from './src/lib/ambition-reflection';
+import { runContinuityLoop } from './src/lib/continuity';
 import { triggerPodRestart } from './src/lib/restart';
 
 const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN || '';
@@ -18,6 +19,8 @@ const HEARTBEAT_ACTIVE = (process.env.HEARTBEAT_ACTIVE || 'true').toLowerCase() 
 const AMBITION_CRON = process.env.AMBITION_CRON || '*/30 * * * *';
 const REFLECTION_CRON = process.env.REFLECTION_CRON || '0 7 * * *'; // daily 7am
 const REFLECTION_ACTIVE = (process.env.REFLECTION_ACTIVE || 'true').toLowerCase() !== 'false';
+const CONTINUITY_CRON = process.env.CONTINUITY_CRON || '0 10,16 * * *'; // twice daily
+const CONTINUITY_ACTIVE = (process.env.CONTINUITY_ACTIVE || 'true').toLowerCase() !== 'false';
 
 // Persist the latest Telegram chat ID so proactive notifications survive restarts.
 const DATA_DIR = path.join(process.cwd(), 'data');
@@ -420,6 +423,36 @@ if (REFLECTION_ACTIVE) {
   });
 } else {
   console.log('🌅 AMBITION reflection disabled (REFLECTION_ACTIVE=false)');
+}
+
+// Continuity loop cron (Golden Goose — adaptive theme-based follow-ups)
+if (CONTINUITY_ACTIVE) {
+  console.log(`🪿 Starting continuity loop (${CONTINUITY_CRON})`);
+  cron.schedule(CONTINUITY_CRON, async () => {
+    try {
+      const result = await runContinuityLoop();
+      console.log(
+        `🪿 continuity: themes=${result.themesExtracted.length} actions=${result.followUpsExecuted.length} faded=${result.themesFaded.length}`
+      );
+      if (bot && savedChatId && result.followUpsExecuted.length > 0) {
+        const summary = result.followUpsExecuted
+          .map((fu) => {
+            const icon = fu.type === 'task' ? '📝' : fu.type === 'sticky' ? '📌' : '📄';
+            return `${icon} ${fu.type}: ${fu.title || fu.content.slice(0, 60)}`;
+          })
+          .join('\n');
+        bot.sendMessage(
+          savedChatId,
+          `🪿 *Continuity Loop*\n\nI noticed some themes and created follow-ups:\n\n${summary}`,
+          { parse_mode: 'Markdown' }
+        );
+      }
+    } catch (err: any) {
+      console.error('Continuity loop error:', err?.message || err);
+    }
+  });
+} else {
+  console.log('🪿 Continuity loop disabled (CONTINUITY_ACTIVE=false)');
 }
 
 console.log('OpenAlfredo daemon is running. The agent is restless.');

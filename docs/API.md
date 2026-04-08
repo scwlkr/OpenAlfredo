@@ -148,6 +148,8 @@ Get current system settings (from .env).
     "REFLECTION_CRON": "0 7 * * *",
     "REFLECTION_ACTIVE": "true",
     "AMBITION_CRON": "*/30 * * * *",
+    "CONTINUITY_CRON": "0 10,16 * * *",
+    "CONTINUITY_ACTIVE": "true",
     "OAX_MODEL": "llama3"
   }
 }

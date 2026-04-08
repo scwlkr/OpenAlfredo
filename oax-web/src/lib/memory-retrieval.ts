@@ -8,6 +8,7 @@ import {
   MEMORY_DIR,
   MEMORY_INDEX_FILE,
   TOPICS_DIR,
+  THEMES_FILE,
 } from './paths';
 
 // `topic.sourcePath` in the index is stored as a oax-web-relative path
@@ -79,6 +80,27 @@ export async function retrieveContext(sessionId: string, agentId: string, query:
         }
       }
     }
+
+    // 4. Active themes (from the continuity loop) — gives the agent
+    //    awareness of user interests even in fresh sessions.
+    try {
+      if (fs.existsSync(THEMES_FILE)) {
+        const themesData = JSON.parse(fs.readFileSync(THEMES_FILE, 'utf-8'));
+        const active = (themesData.themes || [])
+          .filter((t: any) => t.strength >= 0.3)
+          .sort((a: any, b: any) => b.strength - a.strength)
+          .slice(0, 5);
+        if (active.length > 0) {
+          slices.push({
+            source: 'topic',
+            content:
+              'ACTIVE USER THEMES (from continuity loop):\n' +
+              active.map((t: any) => `- ${t.tag} (strength: ${t.strength.toFixed(2)})`).join('\n'),
+            metadata: { type: 'themes' },
+          });
+        }
+      }
+    } catch {}
 
     logInfo('context_retrieved', { sessionId, query, sliceCount: slices.length });
   } catch (err: any) {
