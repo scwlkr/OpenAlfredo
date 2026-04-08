@@ -163,7 +163,9 @@ describe('F4: Ollama model switching', () => {
     const entries = await prisma.transcriptEntry.findMany({
       where: { sessionId, role: 'assistant' },
     });
-    expect(entries[0].content).not.toContain('SAVE_FILE');
+    expect(entries[0].content).not.toContain('[[SAVE_FILE');
+    expect(entries[0].content).toContain('Saved to workspace');
+    expect(entries[0].content).toContain('Dolphins.');
     expect(entries[0].content).toContain('Tell me what to change.');
   });
 

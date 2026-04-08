@@ -87,6 +87,33 @@ export function stripStickyMarkers(reply: string): string {
     .trim();
 }
 
+// ─── Dual delivery: inline markers ──────────────────────────────────────────
+
+const INLINE_MAX_CHARS = 2000;
+
+export function inlineFileSaveMarkers(reply: string): string {
+  return reply.replace(
+    /\[\[SAVE_FILE:\s*(.+?)\]\]\s*\n([\s\S]*?)\n\[\[\/SAVE_FILE\]\]/g,
+    (_match, rawName: string, content: string) => {
+      const name = sanitizeFilename(rawName.trim());
+      const truncated =
+        content.length > INLINE_MAX_CHARS
+          ? content.slice(0, INLINE_MAX_CHARS) + '\n\n_...see workspace for full version_'
+          : content;
+      return `**Saved to workspace:** \`generated/${name}\`\n\n${truncated}`;
+    }
+  );
+}
+
+export function inlineStickyMarkers(reply: string): string {
+  return reply.replace(
+    /\[\[STICKY:\s*(.+?)\]\]\s*\n([\s\S]*?)\n\[\[\/STICKY\]\]/g,
+    (_match, title: string, content: string) => {
+      return `**Sticky note saved:** "${title.trim()}"\n\n${content.trim()}`;
+    }
+  );
+}
+
 // ─── File operations ────────────────────────────────────────────────────────
 
 export function saveWorkspaceFile(file: FileSave, subdir?: WorkspaceSubdir): string {

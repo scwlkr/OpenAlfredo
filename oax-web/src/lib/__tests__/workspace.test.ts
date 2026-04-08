@@ -11,6 +11,8 @@ import {
   readWorkspaceFile,
   parseStickyMarkers,
   stripStickyMarkers,
+  inlineFileSaveMarkers,
+  inlineStickyMarkers,
 } from '../workspace';
 import {
   WORKSPACE_DESK_DIR,
@@ -152,5 +154,32 @@ describe('Workspace listing and reading', () => {
   it('readWorkspaceFile sanitizes path escape attempts', () => {
     // The sanitizer strips ../  so this should either throw or read from within the dir
     expect(() => readWorkspaceFile('generated', '../../etc/passwd')).toThrow();
+  });
+});
+
+describe('Dual delivery: inline markers', () => {
+  it('inlineFileSaveMarkers replaces SAVE_FILE blocks with readable content', () => {
+    const reply = `Done.\n[[SAVE_FILE: plan.md]]\n# My Plan\nStep 1.\n[[/SAVE_FILE]]\nLet me know.`;
+    const result = inlineFileSaveMarkers(reply);
+    expect(result).toContain('**Saved to workspace:** `generated/plan.md`');
+    expect(result).toContain('# My Plan');
+    expect(result).toContain('Let me know.');
+    expect(result).not.toContain('[[SAVE_FILE');
+  });
+
+  it('inlineFileSaveMarkers truncates large content', () => {
+    const bigContent = 'x'.repeat(3000);
+    const reply = `[[SAVE_FILE: big.md]]\n${bigContent}\n[[/SAVE_FILE]]`;
+    const result = inlineFileSaveMarkers(reply);
+    expect(result).toContain('see workspace for full version');
+    expect(result.length).toBeLessThan(bigContent.length);
+  });
+
+  it('inlineStickyMarkers replaces STICKY blocks with confirmation', () => {
+    const reply = `Here:\n[[STICKY: ideas]]\n- Try yoga\n- Run more\n[[/STICKY]]\nDone.`;
+    const result = inlineStickyMarkers(reply);
+    expect(result).toContain('**Sticky note saved:** "ideas"');
+    expect(result).toContain('Try yoga');
+    expect(result).not.toContain('[[STICKY');
   });
 });

@@ -4,10 +4,10 @@ import { appendTask, parseTasksFromReply, stripTaskMarkers } from './tasks';
 import {
   parseFileSaves,
   saveWorkspaceFile,
-  stripFileSaveMarkers,
+  inlineFileSaveMarkers,
   parseStickyMarkers,
   saveSticky,
-  stripStickyMarkers,
+  inlineStickyMarkers,
 } from './workspace';
 import {
   buildCodeIndex,
@@ -150,8 +150,8 @@ function handleMarkers(
   }
 
   let cleaned = tasks.length ? stripTaskMarkers(text) : text;
-  if (files.length) cleaned = stripFileSaveMarkers(cleaned);
-  if (stickies.length) cleaned = stripStickyMarkers(cleaned);
+  if (files.length) cleaned = inlineFileSaveMarkers(cleaned);
+  if (stickies.length) cleaned = inlineStickyMarkers(cleaned);
   if (mutating.length || /\[\[READ_FILE:/.test(cleaned)) cleaned = stripSelfEditMarkers(cleaned);
 
   // Restart: only honored if the agent also applied at least one successful

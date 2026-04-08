@@ -39,6 +39,29 @@ Both the web UI and Telegram bot route through a shared engine (`oax-engine.ts`)
 
 For the full picture see [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md).
 
+## Features
+
+- **Persistent identity** — SOUL.md gives Alfredo a durable personality across every session
+- **3-layer memory** — SOUL + topic files + transcript history, loaded only when relevant
+- **Task management** — TASKS.md with scheduling (`|when:`, `|recur:`), managed via UI or chat markers
+- **Structured workspace** — desk (sticky notes, ideas), files (user materials), generated (Alfredo's outputs)
+- **AMBITION reflection** — daily LLM-generated morning brief synthesizing your trajectory and themes
+- **RESTLESS heartbeat** — configurable background loop where Alfredo wakes up, reflects, and acts
+- **Dual delivery** — generated artifacts are saved to workspace AND shown inline in chat
+- **Self-modification** — Alfredo can read and edit its own source code (sandboxed)
+- **Web UI** — chat, model selector, task queue, workspace browser, reflection panel, settings
+- **Telegram bot** — pairing, per-chat model selection, proactive alerts, morning briefs
+- **CLI** — `oax pod` starts/stops/monitors the full stack
+
+## Documentation
+
+- [Quick Start](docs/QUICKSTART.md) — get running in 5 minutes
+- [Architecture](docs/ARCHITECTURE.md) — system design and data flow
+- [API Reference](docs/API.md) — all HTTP endpoints
+- [Testing Guide](docs/TESTING.md) — run and write tests
+- [Telegram Setup](docs/TELEGRAM_SETUP.md) — wire up the Telegram bot
+- [Security](docs/SECURITY.md) — path sandboxing and token storage
+
 ## Telegram (Optional)
 
 Wire up a Telegram bot for mobile alerts, remote heartbeats, and on-the-go chat with your agent. See [`docs/TELEGRAM_SETUP.md`](./docs/TELEGRAM_SETUP.md) for the full walkthrough.
@@ -47,7 +70,7 @@ Wire up a Telegram bot for mobile alerts, remote heartbeats, and on-the-go chat 
 
 Your agent's identity lives in `oax-web/data/agents/default/SOUL.md`. On first run, bootstrap copies the template from [`examples/SOUL.example.md`](./examples/SOUL.example.md). Edit your SOUL to set a name, personality, goals, and relationship framing. The agent reads it on every turn.
 
-The task list lives at `oax-web/data/AMBITION.md` (template: [`examples/AMBITION.example.md`](./examples/AMBITION.example.md)). Tasks support `|when:<ISO>` one-off reminders and `|recur:<cron>` recurring schedules.
+The task list lives at `oax-web/data/TASKS.md` (template: [`examples/TASKS.example.md`](./examples/TASKS.example.md)). Tasks support `|when:<ISO>` one-off reminders and `|recur:<cron>` recurring schedules. The reflective morning brief lives at `oax-web/data/AMBITION.md` and is regenerated daily by the reflection engine.
 
 ## Contributing
 
