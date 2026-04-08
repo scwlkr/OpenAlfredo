@@ -55,6 +55,10 @@ export const THEMES_FILE = path.join(DATA_ROOT, 'themes.json');
 export const DEFAULT_AGENT_ID = 'default';
 export const DEFAULT_SOUL_PATH = path.join(AGENTS_DIR, DEFAULT_AGENT_ID, 'SOUL.md');
 
+export function databaseUrlForDataRoot(dataRoot: string = DATA_ROOT): string {
+  return `file:${toPosixPath(path.join(dataRoot, 'oax.db'))}`;
+}
+
 export function resolveDataPath(...segments: string[]): string {
   return path.join(DATA_ROOT, ...segments);
 }

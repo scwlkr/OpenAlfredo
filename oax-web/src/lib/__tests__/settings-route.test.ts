@@ -8,9 +8,11 @@ const overlayDir = path.join(process.cwd(), '.profiles', 'settings-route-test');
 const overlayEnvPath = path.join(overlayDir, '.env');
 
 let baseEnvSnapshot = '';
+let baseEnvExisted = false;
 
 beforeEach(() => {
-  baseEnvSnapshot = fs.existsSync(baseEnvPath) ? fs.readFileSync(baseEnvPath, 'utf-8') : '';
+  baseEnvExisted = fs.existsSync(baseEnvPath);
+  baseEnvSnapshot = baseEnvExisted ? fs.readFileSync(baseEnvPath, 'utf-8') : '';
   fs.mkdirSync(overlayDir, { recursive: true });
   fs.writeFileSync(overlayEnvPath, 'OAX_MODEL="llama3"\n');
   process.env.OAX_RUNTIME_ENV_PATH = overlayEnvPath;
@@ -23,8 +25,10 @@ afterEach(() => {
     process.env.OAX_RUNTIME_ENV_PATH = originalRuntimeEnvPath;
   }
   fs.rmSync(overlayDir, { recursive: true, force: true });
-  if (fs.existsSync(baseEnvPath)) {
+  if (baseEnvExisted && fs.existsSync(baseEnvPath)) {
     fs.writeFileSync(baseEnvPath, baseEnvSnapshot);
+  } else if (!baseEnvExisted) {
+    fs.rmSync(baseEnvPath, { force: true });
   }
   vi.resetModules();
 });
@@ -56,7 +60,10 @@ describe('/api/settings runtime env overlay', () => {
     const overlayContent = fs.readFileSync(overlayEnvPath, 'utf-8');
     expect(overlayContent).toContain('OAX_MODEL="mistral"');
     expect(overlayContent).toContain('HEARTBEAT_ACTIVE="false"');
-    expect(fs.readFileSync(baseEnvPath, 'utf-8')).toBe(baseEnvSnapshot);
+    const baseEnvContent = fs.existsSync(baseEnvPath)
+      ? fs.readFileSync(baseEnvPath, 'utf-8')
+      : '';
+    expect(baseEnvContent).toBe(baseEnvSnapshot);
   });
 
   it('rejects invalid cron expressions without mutating the overlay', async () => {
