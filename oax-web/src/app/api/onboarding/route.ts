@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
-import { AGENTS_DIR } from '@/lib/paths';
+
+const AGENTS_DIR = path.join(process.cwd(), 'data', 'agents');
 
 export async function POST(request: Request) {
   try {

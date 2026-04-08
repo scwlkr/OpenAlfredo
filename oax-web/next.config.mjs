@@ -1,5 +1,18 @@
+import { fileURLToPath } from 'node:url';
+
+const APP_ROOT = fileURLToPath(new URL('./', import.meta.url));
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  turbopack: {
+    root: APP_ROOT,
+    ignoreIssue: [
+      {
+        path: /next\.config\.mjs$/,
+        title: 'Encountered unexpected file in NFT list',
+      },
+    ],
+  },
   async headers() {
     return [
       {

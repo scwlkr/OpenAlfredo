@@ -18,10 +18,7 @@
 // EDIT_FILE is preferred (surgical). WRITE_FILE is the nuclear option.
 import fs from 'fs';
 import path from 'path';
-import {
-  REPO_ROOT as CANONICAL_REPO_ROOT,
-  DATA_ROOT_REPO_REL,
-} from './paths';
+import { REPO_ROOT as CANONICAL_REPO_ROOT, DATA_ROOT_REPO_REL } from './repo-paths';
 
 // oax-web/ is cwd at runtime; repo root is one level up.
 export const REPO_ROOT = CANONICAL_REPO_ROOT;
@@ -50,8 +47,8 @@ export type SelfEditResult = {
 function resolveInsideRepo(relPath: string): string | null {
   const trimmed = relPath.trim().replace(/^\/+/, '');
   if (!trimmed) return null;
-  const abs = path.resolve(REPO_ROOT, trimmed);
-  const rel = path.relative(REPO_ROOT, abs);
+  const abs = path.resolve(/* turbopackIgnore: true */ REPO_ROOT, trimmed);
+  const rel = path.relative(/* turbopackIgnore: true */ REPO_ROOT, abs);
   if (rel.startsWith('..') || path.isAbsolute(rel)) return null;
   const parts = rel.split(path.sep);
   for (const seg of FORBIDDEN_ANY_DEPTH) {
@@ -164,7 +161,7 @@ export function buildCodeIndex(): string {
   ];
   const lines: string[] = [];
   for (const rel of include) {
-    const abs = path.join(REPO_ROOT, rel);
+    const abs = path.join(/* turbopackIgnore: true */ REPO_ROOT, rel);
     if (!fs.existsSync(abs)) continue;
     const stat = fs.statSync(abs);
     if (stat.isFile()) {

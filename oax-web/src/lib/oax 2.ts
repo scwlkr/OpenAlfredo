@@ -8,11 +8,11 @@ import ollama from 'ollama';
 import { processChatSync } from './oax-engine';
 import { readAmbition } from './ambition';
 import { readTasks, dueTasks, appendTask } from './tasks';
+import { LEGACY_RESTLESS_PATH } from './repo-paths';
 import {
   DEFAULT_AGENT_ID,
   DEFAULT_SOUL_PATH as SOUL_PATH,
   RESTLESS_LOG_PATH,
-  LEGACY_RESTLESS_PATH,
 } from './paths';
 
 // Heartbeat log lives under oax-web/data/ (gitignored). If only the legacy

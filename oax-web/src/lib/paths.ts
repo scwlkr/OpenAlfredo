@@ -7,17 +7,17 @@
 // codebase-wide grep.
 //
 // Resolution assumes the daemon / Next.js app is launched from `oax-web/`
-// (which is always the case in practice). REPO_ROOT is one level up.
+// (which is always the case in practice).
 import path from 'node:path';
 
 // `oax-web/` at runtime.
 export const WEB_ROOT = process.cwd();
-// Repo root (one above oax-web/).
-export const REPO_ROOT = path.resolve(WEB_ROOT, '..');
 
 function resolveRuntimePath(rawValue: string | undefined, fallback: string): string {
   if (!rawValue) return fallback;
-  return path.isAbsolute(rawValue) ? rawValue : path.resolve(WEB_ROOT, rawValue);
+  return path.isAbsolute(rawValue)
+    ? rawValue
+    : path.resolve(/* turbopackIgnore: true */ process.cwd(), rawValue);
 }
 
 export function toPosixPath(input: string): string {
@@ -25,12 +25,11 @@ export function toPosixPath(input: string): string {
 }
 
 // All owner-private state lives under this dir — gitignored wholesale.
-export const DEFAULT_DATA_ROOT = path.join(WEB_ROOT, 'data');
+export const DEFAULT_DATA_ROOT = path.join(process.cwd(), 'data');
 export const DATA_ROOT = resolveRuntimePath(process.env.OAX_DATA_ROOT, DEFAULT_DATA_ROOT);
-export const DATA_ROOT_REPO_REL = toPosixPath(path.relative(REPO_ROOT, DATA_ROOT));
 export const RUNTIME_ENV_PATH = resolveRuntimePath(
   process.env.OAX_RUNTIME_ENV_PATH,
-  path.join(WEB_ROOT, '.env')
+  path.join(process.cwd(), '.env')
 );
 export const ACTIVE_PROFILE = process.env.OAX_PROFILE || '';
 
@@ -48,13 +47,6 @@ export const WORKSPACE_FILES_DIR = path.join(WORKSPACE_DIR, 'files');
 export const WORKSPACE_GENERATED_DIR = path.join(WORKSPACE_DIR, 'generated');
 export const LOGS_DIR = path.join(DATA_ROOT, 'logs');
 export const API_KEY_FILE = path.join(DATA_ROOT, '.oax-api-key');
-
-// Legacy fallbacks — the pre-migration owner still has AMBITION.md / RESTLESS.md
-// at the repo root. readAmbition() prefers the DATA_ROOT copy but falls back to
-// these if only the legacy file exists, so the owner's existing state keeps
-// working through a migration window.
-export const LEGACY_AMBITION_PATH = path.join(REPO_ROOT, 'AMBITION.md');
-export const LEGACY_RESTLESS_PATH = path.join(REPO_ROOT, 'RESTLESS.md');
 
 // Theme persistence for the continuity loop (Golden Goose).
 export const THEMES_FILE = path.join(DATA_ROOT, 'themes.json');

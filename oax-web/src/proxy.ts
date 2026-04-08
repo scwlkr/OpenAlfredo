@@ -6,7 +6,7 @@ import type { NextRequest } from 'next/server';
 // The key is loaded from the OAX_API_KEY environment variable, which is
 // set automatically by the auth-key bootstrap in src/lib/auth.ts.
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   // Only protect /api/* routes (except /api/auth/key which provides the key
   // to the trusted local client)
   const pathname = request.nextUrl.pathname;

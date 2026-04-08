@@ -25,7 +25,12 @@ export function triggerPodRestart(opts: { delaySec?: number; timeoutSec?: number
   const _require = eval('require') as NodeRequire;
   const path = _require('path') as typeof import('path');
   const cp = _require('child_process') as typeof import('child_process');
-  const respawnBin = path.resolve(process.cwd(), '..', 'bin', 'respawn.js');
+  const respawnBin = path.resolve(
+    /* turbopackIgnore: true */ process.cwd(),
+    '..',
+    'bin',
+    'respawn.js'
+  );
   const child = cp.spawn(
     'node',
     [respawnBin, `--delay=${delaySec}`, `--timeout=${timeoutSec}`],

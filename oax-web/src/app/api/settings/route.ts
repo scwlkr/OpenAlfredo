@@ -2,8 +2,15 @@ import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
 import { logInfo, logError } from '@/lib/logger';
-import { RUNTIME_ENV_PATH as ENV_PATH } from '@/lib/paths';
 import { sanitizeRuntimeSettings, validateRuntimeSettingsPatch } from '@/lib/runtime-settings';
+
+const ENV_PATH = (() => {
+  const rawValue = process.env.OAX_RUNTIME_ENV_PATH;
+  if (!rawValue) return path.join(process.cwd(), '.env');
+  return path.isAbsolute(rawValue)
+    ? rawValue
+    : path.resolve(/* turbopackIgnore: true */ process.cwd(), rawValue);
+})();
 
 function parseEnvFile(): Record<string, string> {
   try {
