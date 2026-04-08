@@ -2,8 +2,9 @@ import { describe, it, expect, beforeEach, afterAll, beforeAll, vi } from 'vites
 import fs from 'fs';
 import { prisma } from '../db';
 import path from 'path';
-import { AMBITION_PATH } from '../ambition';
+import { TASKS_PATH as AMBITION_PATH } from '../tasks';
 import { WORKSPACE_DIR } from '../workspace';
+import { WORKSPACE_GENERATED_DIR } from '../paths';
 
 // Capture the onFinish promise so tests can await assistant persistence.
 let finishPromise: Promise<void> | null = null;
@@ -154,7 +155,7 @@ describe('F4: Ollama model switching', () => {
     await processChat(sessionId, 'write a business plan', 'llama3');
     await finishPromise;
 
-    const filePath = path.join(WORKSPACE_DIR, slug);
+    const filePath = path.join(WORKSPACE_GENERATED_DIR, slug);
     expect(fs.existsSync(filePath)).toBe(true);
     expect(fs.readFileSync(filePath, 'utf-8')).toContain('Dolphins.');
     fs.unlinkSync(filePath);

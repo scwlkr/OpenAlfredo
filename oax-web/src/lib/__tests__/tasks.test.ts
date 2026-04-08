@@ -1,35 +1,34 @@
 import { describe, it, expect, beforeEach, afterAll, beforeAll } from 'vitest';
 import fs from 'fs';
-import path from 'path';
 import {
-  AMBITION_PATH,
+  TASKS_PATH,
   appendTask,
   listTasks,
   parseTasksFromReply,
   stripTaskMarkers,
   dueTasks,
-} from '../ambition';
-import { GET as ambitionGET, POST as ambitionPOST } from '../../app/api/ambition/route';
+} from '../tasks';
+import { GET as tasksGET, POST as tasksPOST } from '../../app/api/tasks/route';
 
 const MARKER = 'test-marker-' + Math.random().toString(36).slice(2, 8);
-let originalAmbition: string;
+let originalTasks: string;
 
 beforeAll(() => {
-  originalAmbition = fs.existsSync(AMBITION_PATH)
-    ? fs.readFileSync(AMBITION_PATH, 'utf-8')
-    : '# AMBITION\n\n## Tasks\n';
+  originalTasks = fs.existsSync(TASKS_PATH)
+    ? fs.readFileSync(TASKS_PATH, 'utf-8')
+    : '# Tasks\n\n## Tasks\n';
 });
 
 beforeEach(() => {
   // Restore to original between tests so tasks don't leak.
-  fs.writeFileSync(AMBITION_PATH, originalAmbition);
+  fs.writeFileSync(TASKS_PATH, originalTasks);
 });
 
 afterAll(() => {
-  fs.writeFileSync(AMBITION_PATH, originalAmbition);
+  fs.writeFileSync(TASKS_PATH, originalTasks);
 });
 
-describe('F13: [[TASK: …]] marker parsing', () => {
+describe('[[TASK: ...]] marker parsing', () => {
   it('extracts one task from an assistant reply', () => {
     const reply = 'Sure thing. [[TASK: remind me to water the plants]] Anything else?';
     expect(parseTasksFromReply(reply)).toEqual(['remind me to water the plants']);
@@ -52,10 +51,10 @@ describe('F13: [[TASK: …]] marker parsing', () => {
   });
 });
 
-describe('F12+F13: AMBITION.md append + list', () => {
-  it('appendTask adds a "- [ ] …" line under ## Tasks', () => {
+describe('TASKS.md append + list', () => {
+  it('appendTask adds a "- [ ] ..." line under ## Tasks', () => {
     appendTask(`${MARKER} first task`);
-    const raw = fs.readFileSync(AMBITION_PATH, 'utf-8');
+    const raw = fs.readFileSync(TASKS_PATH, 'utf-8');
     expect(raw).toContain(`- [ ] ${MARKER} first task`);
   });
 
@@ -80,8 +79,8 @@ describe('F12+F13: AMBITION.md append + list', () => {
 
   it('listTasks marks checked boxes as done', () => {
     fs.writeFileSync(
-      AMBITION_PATH,
-      originalAmbition + `- [x] ${MARKER} completed\n- [ ] ${MARKER} pending\n`
+      TASKS_PATH,
+      originalTasks + `- [x] ${MARKER} completed\n- [ ] ${MARKER} pending\n`
     );
     const mine = listTasks().filter((t) => t.text.includes(MARKER));
     expect(mine.find((t) => t.text.endsWith('completed'))!.done).toBe(true);
@@ -89,7 +88,7 @@ describe('F12+F13: AMBITION.md append + list', () => {
   });
 });
 
-describe('F12: dueTasks() cron window logic', () => {
+describe('dueTasks() cron window logic', () => {
   it('returns tasks whose |when: falls inside [now-window, now]', () => {
     const now = new Date('2026-04-10T09:15:00Z');
     const past = '2026-04-10T09:00:00Z'; // 15 min ago — inside 30m window
@@ -107,18 +106,18 @@ describe('F12: dueTasks() cron window logic', () => {
 
   it('excludes completed tasks', () => {
     fs.writeFileSync(
-      AMBITION_PATH,
-      originalAmbition + `- [x] ${MARKER} done |when:2026-04-10T09:00:00Z\n`
+      TASKS_PATH,
+      originalTasks + `- [x] ${MARKER} done |when:2026-04-10T09:00:00Z\n`
     );
     const due = dueTasks(new Date('2026-04-10T09:15:00Z'));
     expect(due.find((t) => t.text.includes(MARKER))).toBeUndefined();
   });
 });
 
-describe('F12/F13: /api/ambition endpoint', () => {
+describe('/api/tasks endpoint', () => {
   it('POST appends, GET lists', async () => {
-    const postRes = await ambitionPOST(
-      new Request('http://local/api/ambition', {
+    const postRes = await tasksPOST(
+      new Request('http://local/api/tasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ task: `${MARKER} api task` }),
@@ -126,14 +125,14 @@ describe('F12/F13: /api/ambition endpoint', () => {
     );
     expect(postRes.status).toBe(200);
 
-    const getRes = await ambitionGET(new Request('http://local/api/ambition'));
+    const getRes = await tasksGET(new Request('http://local/api/tasks'));
     const json = await getRes.json();
     expect(json.tasks.find((t: any) => t.text.includes('api task'))).toBeDefined();
   });
 
-  it('POST without task returns AMBITION_MISSING_TASK 400', async () => {
-    const res = await ambitionPOST(
-      new Request('http://local/api/ambition', {
+  it('POST without task returns TASKS_MISSING_TASK 400', async () => {
+    const res = await tasksPOST(
+      new Request('http://local/api/tasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({}),
@@ -141,6 +140,6 @@ describe('F12/F13: /api/ambition endpoint', () => {
     );
     expect(res.status).toBe(400);
     const json = await res.json();
-    expect(json.code).toBe('AMBITION_MISSING_TASK');
+    expect(json.code).toBe('TASKS_MISSING_TASK');
   });
 });

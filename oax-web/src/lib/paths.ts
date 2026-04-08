@@ -20,12 +20,16 @@ export const DATA_ROOT = path.join(WEB_ROOT, 'data');
 
 // Individual state locations.
 export const AMBITION_PATH = path.join(DATA_ROOT, 'AMBITION.md');
+export const TASKS_PATH = path.join(DATA_ROOT, 'TASKS.md');
 export const RESTLESS_LOG_PATH = path.join(DATA_ROOT, 'RESTLESS.log.md');
 export const AGENTS_DIR = path.join(DATA_ROOT, 'agents');
 export const MEMORY_DIR = path.join(DATA_ROOT, 'memory');
 export const MEMORY_INDEX_FILE = path.join(MEMORY_DIR, 'index.json');
 export const TOPICS_DIR = path.join(MEMORY_DIR, 'topics');
 export const WORKSPACE_DIR = path.join(DATA_ROOT, 'workspace');
+export const WORKSPACE_DESK_DIR = path.join(WORKSPACE_DIR, 'desk');
+export const WORKSPACE_FILES_DIR = path.join(WORKSPACE_DIR, 'files');
+export const WORKSPACE_GENERATED_DIR = path.join(WORKSPACE_DIR, 'generated');
 export const LOGS_DIR = path.join(DATA_ROOT, 'logs');
 export const API_KEY_FILE = path.join(DATA_ROOT, '.oax-api-key');
 

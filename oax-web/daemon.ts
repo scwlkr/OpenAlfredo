@@ -8,12 +8,16 @@ import cron from 'node-cron';
 import ollama from 'ollama';
 import { chatWithAgent, checkCronTasks, runHeartbeat } from './src/lib/oax';
 import { readAmbition } from './src/lib/ambition';
+import { readTasks } from './src/lib/tasks';
+import { generateReflection } from './src/lib/ambition-reflection';
 import { triggerPodRestart } from './src/lib/restart';
 
 const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN || '';
 const HEARTBEAT_CRON = process.env.HEARTBEAT_CRON || '0 * * * *'; // hourly by default
 const HEARTBEAT_ACTIVE = (process.env.HEARTBEAT_ACTIVE || 'true').toLowerCase() !== 'false';
 const AMBITION_CRON = process.env.AMBITION_CRON || '*/30 * * * *';
+const REFLECTION_CRON = process.env.REFLECTION_CRON || '0 7 * * *'; // daily 7am
+const REFLECTION_ACTIVE = (process.env.REFLECTION_ACTIVE || 'true').toLowerCase() !== 'false';
 
 // Persist the latest Telegram chat ID so proactive notifications survive restarts.
 const DATA_DIR = path.join(process.cwd(), 'data');
@@ -259,8 +263,10 @@ if (TELEGRAM_TOKEN) {
 
   bot.onText(/^\/status\b/, (msg) => {
     if (!isPaired(msg.chat.id)) return sendPairingPrompt(msg.chat.id);
-    const ambition = readAmbition() || '(no AMBITION.md)';
-    bot?.sendMessage(msg.chat.id, '```\n' + ambition.slice(0, 3500) + '\n```', {
+    const ambition = readAmbition() || '(no reflection yet)';
+    const tasks = readTasks() || '(no tasks)';
+    const status = `AMBITION (Reflection):\n${ambition}\n\nTASKS:\n${tasks}`;
+    bot?.sendMessage(msg.chat.id, '```\n' + status.slice(0, 3500) + '\n```', {
       parse_mode: 'Markdown',
     });
   });
@@ -395,6 +401,25 @@ if (HEARTBEAT_ACTIVE) {
   });
 } else {
   console.log('💤 RESTLESS heartbeat disabled (HEARTBEAT_ACTIVE=false)');
+}
+
+// AMBITION reflection cron (daily morning brief)
+if (REFLECTION_ACTIVE) {
+  console.log(`🌅 Starting AMBITION reflection cron (${REFLECTION_CRON})`);
+  cron.schedule(REFLECTION_CRON, async () => {
+    try {
+      const reflection = await generateReflection();
+      console.log(`🌅 reflection generated (${reflection.length} chars)`);
+      if (bot && savedChatId) {
+        const brief = `🌅 *Morning Brief*\n\n${reflection.slice(0, 3500)}`;
+        bot.sendMessage(savedChatId, brief, { parse_mode: 'Markdown' });
+      }
+    } catch (err: any) {
+      console.error('Reflection cron error:', err?.message || err);
+    }
+  });
+} else {
+  console.log('🌅 AMBITION reflection disabled (REFLECTION_ACTIVE=false)');
 }
 
 console.log('OpenAlfredo daemon is running. The agent is restless.');

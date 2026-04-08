@@ -78,7 +78,7 @@ function writeIfMissing(dest, content, label) {
 
 function stepCreateDirs() {
   log('• ensuring data subtree…');
-  for (const sub of ['agents/default', 'memory/topics', 'workspace', 'logs']) {
+  for (const sub of ['agents/default', 'memory/topics', 'workspace', 'workspace/desk', 'workspace/files', 'workspace/generated', 'logs']) {
     ensureDir(path.join(DATA_DIR, sub));
   }
   log('  ✓ data/ subtree ready');
@@ -95,6 +95,11 @@ function stepCopyTemplates() {
     path.join(EXAMPLES_DIR, 'AMBITION.example.md'),
     path.join(DATA_DIR, 'AMBITION.md'),
     'AMBITION'
+  );
+  copyTemplate(
+    path.join(EXAMPLES_DIR, 'TASKS.example.md'),
+    path.join(DATA_DIR, 'TASKS.md'),
+    'TASKS'
   );
   // Empty index.json so memory-retrieval starts clean.
   writeIfMissing(
@@ -176,6 +181,7 @@ function runCheck() {
   const required = [
     path.join(DATA_DIR, 'agents', 'default', 'SOUL.md'),
     path.join(DATA_DIR, 'AMBITION.md'),
+    path.join(DATA_DIR, 'TASKS.md'),
     path.join(DATA_DIR, 'memory', 'index.json'),
     path.join(DATA_DIR, 'RESTLESS.log.md'),
     path.join(DATA_DIR, '.oax-api-key'),

@@ -6,7 +6,8 @@ import fs from 'fs';
 import path from 'path';
 import ollama from 'ollama';
 import { processChatSync } from './oax-engine';
-import { readAmbition, dueTasks, appendTask } from './ambition';
+import { readAmbition } from './ambition';
+import { readTasks, dueTasks, appendTask } from './tasks';
 import {
   DEFAULT_AGENT_ID,
   DEFAULT_SOUL_PATH as SOUL_PATH,
@@ -110,6 +111,7 @@ export interface HeartbeatResult {
 export async function runHeartbeat(): Promise<HeartbeatResult> {
   const soul = readFileSafe(SOUL_PATH);
   const ambition = readAmbition();
+  const tasks = readTasks();
   const restless = readFileSafe(RESTLESS_PATH);
 
   const logTail = restless.includes(HEARTBEAT_LOG_START)
@@ -127,8 +129,11 @@ export async function runHeartbeat(): Promise<HeartbeatResult> {
 SOUL (your identity):
 ${soul}
 
-AMBITION (your open tasks):
-${ambition}
+AMBITION (your reflection / morning brief):
+${ambition || '(no reflection yet)'}
+
+TASKS (your open task list):
+${tasks || '(no tasks yet)'}
 
 RECENT HEARTBEATS (your own recent thoughts):
 ${logTail || '(none yet — this is your first heartbeat)'}
@@ -137,7 +142,7 @@ Current Time: ${new Date().toLocaleString()}
 
 Decide: is there anything you should do right now? Options:
 - [[NOTIFY: <short message>]] — proactively message the user (use sparingly; only if timely/relevant).
-- [[TASK: <task>]] — add a new task to AMBITION.
+- [[TASK: <task>]] — add a new task to the task list.
 - [[REFLECT: <thought>]] — record a private thought. No user output.
 - [[REST]] — nothing to do. Stay restless but silent.
 

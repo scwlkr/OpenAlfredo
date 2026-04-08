@@ -94,14 +94,14 @@ export default function Home() {
 
   const fetchTasks = async () => {
     try {
-      const res = await authFetch('/api/ambition');
+      const res = await authFetch('/api/tasks');
       const data = await res.json();
       setTasks(data.tasks || []);
     } catch {}
   };
 
   const toggleTask = async (raw: string, done: boolean) => {
-    await authFetch('/api/ambition', {
+    await authFetch('/api/tasks', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ raw, done }),
@@ -110,7 +110,7 @@ export default function Home() {
   };
 
   const removeTask = async (raw: string) => {
-    await authFetch('/api/ambition', {
+    await authFetch('/api/tasks', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ raw }),
@@ -128,7 +128,7 @@ export default function Home() {
       body += ` |when:${iso}`;
     }
     if (newTaskRecur.trim()) body += ` |recur:${newTaskRecur.trim()}`;
-    await authFetch('/api/ambition', {
+    await authFetch('/api/tasks', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ task: body }),

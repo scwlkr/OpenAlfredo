@@ -1,7 +1,14 @@
 import { prisma } from './db';
 import { retrieveContext, MemorySlice } from './memory-retrieval';
-import { appendTask, parseTasksFromReply, stripTaskMarkers } from './ambition';
-import { parseFileSaves, saveWorkspaceFile, stripFileSaveMarkers } from './workspace';
+import { appendTask, parseTasksFromReply, stripTaskMarkers } from './tasks';
+import {
+  parseFileSaves,
+  saveWorkspaceFile,
+  stripFileSaveMarkers,
+  parseStickyMarkers,
+  saveSticky,
+  stripStickyMarkers,
+} from './workspace';
 import {
   buildCodeIndex,
   parseSelfEdits,
@@ -46,7 +53,15 @@ workspace, wrap the file content like this:
 # Business Plan
 ...contents...
 [[/SAVE_FILE]]
-The block is stripped from the visible reply; the file is saved under data/workspace/.
+The block is stripped from the visible reply; the file is saved under data/workspace/generated/.
+
+If you want to leave a quick note on the user's desk (like a sticky note or idea),
+wrap it like this:
+[[STICKY: workout ideas]]
+- Try adding a morning run
+- Look into yoga classes
+[[/STICKY]]
+The sticky note is saved to the desk area of the workspace.
 
 SELF-MODIFICATION:
 You can read and edit your own source code. Paths are relative to the repo root.
@@ -103,10 +118,19 @@ function handleMarkers(
   const files = parseFileSaves(text);
   for (const f of files) {
     try {
-      const fullPath = saveWorkspaceFile(f);
+      const fullPath = saveWorkspaceFile(f, 'generated');
       logInfo('workspace_file_saved', { sessionId, name: f.name, path: fullPath });
     } catch (e: any) {
       logInfo('workspace_file_save_failed', { sessionId, name: f.name, error: e?.message });
+    }
+  }
+  const stickies = parseStickyMarkers(text);
+  for (const s of stickies) {
+    try {
+      const fullPath = saveSticky(s.title, s.content);
+      logInfo('sticky_saved', { sessionId, title: s.title, path: fullPath });
+    } catch (e: any) {
+      logInfo('sticky_save_failed', { sessionId, title: s.title, error: e?.message });
     }
   }
 
@@ -127,6 +151,7 @@ function handleMarkers(
 
   let cleaned = tasks.length ? stripTaskMarkers(text) : text;
   if (files.length) cleaned = stripFileSaveMarkers(cleaned);
+  if (stickies.length) cleaned = stripStickyMarkers(cleaned);
   if (mutating.length || /\[\[READ_FILE:/.test(cleaned)) cleaned = stripSelfEditMarkers(cleaned);
 
   // Restart: only honored if the agent also applied at least one successful

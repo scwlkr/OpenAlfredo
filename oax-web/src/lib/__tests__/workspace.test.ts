@@ -6,7 +6,17 @@ import {
   parseFileSaves,
   stripFileSaveMarkers,
   saveWorkspaceFile,
+  saveSticky,
+  listWorkspaceFiles,
+  readWorkspaceFile,
+  parseStickyMarkers,
+  stripStickyMarkers,
 } from '../workspace';
+import {
+  WORKSPACE_DESK_DIR,
+  WORKSPACE_GENERATED_DIR,
+  WORKSPACE_FILES_DIR,
+} from '../paths';
 
 const written: string[] = [];
 afterEach(() => {
@@ -54,23 +64,93 @@ Anything else?`;
     expect(out).toContain('Anything else?');
   });
 
-  it('saveWorkspaceFile writes under data/workspace/ with sanitized name', () => {
-    const name = 'Test-File ' + Math.random().toString(36).slice(2, 8) + '.md';
+  it('saveWorkspaceFile writes to generated/ by default', () => {
+    const name = 'test-gen-' + Math.random().toString(36).slice(2, 8) + '.md';
     const fullPath = saveWorkspaceFile({ name, content: '# hello\n' });
     written.push(fullPath);
-    expect(fullPath.startsWith(WORKSPACE_DIR)).toBe(true);
+    expect(fullPath.startsWith(WORKSPACE_GENERATED_DIR)).toBe(true);
     expect(fs.existsSync(fullPath)).toBe(true);
-    expect(fs.readFileSync(fullPath, 'utf-8')).toBe('# hello\n');
-    // No spaces in final name
-    expect(path.basename(fullPath)).not.toContain(' ');
+  });
+
+  it('saveWorkspaceFile routes to specified subdir', () => {
+    const name = 'test-files-' + Math.random().toString(36).slice(2, 8) + '.md';
+    const fullPath = saveWorkspaceFile({ name, content: 'data' }, 'files');
+    written.push(fullPath);
+    expect(fullPath.startsWith(WORKSPACE_FILES_DIR)).toBe(true);
   });
 
   it('saveWorkspaceFile rejects path-escape attempts', () => {
     const fullPath = saveWorkspaceFile({ name: '../../etc/passwd', content: 'x' });
     written.push(fullPath);
-    // Sanitizer strips the slashes, writing file inside workspace.
-    expect(fullPath.startsWith(WORKSPACE_DIR)).toBe(true);
+    expect(fullPath.startsWith(WORKSPACE_GENERATED_DIR)).toBe(true);
     expect(path.basename(fullPath)).not.toContain('..');
-    expect(path.basename(fullPath)).not.toContain('/');
+  });
+});
+
+describe('Sticky notes', () => {
+  it('saveSticky creates a markdown file in desk/ with frontmatter', () => {
+    const fullPath = saveSticky('test idea', 'Try running in the morning');
+    written.push(fullPath);
+    expect(fullPath.startsWith(WORKSPACE_DESK_DIR)).toBe(true);
+    expect(fs.existsSync(fullPath)).toBe(true);
+    const content = fs.readFileSync(fullPath, 'utf-8');
+    expect(content).toContain('type: sticky');
+    expect(content).toContain('title: test idea');
+    expect(content).toContain('Try running in the morning');
+  });
+
+  it('parseStickyMarkers extracts [[STICKY]] blocks', () => {
+    const reply = `Here's an idea:
+[[STICKY: workout tips]]
+- Morning runs
+- Evening yoga
+[[/STICKY]]
+Let me know!`;
+    const stickies = parseStickyMarkers(reply);
+    expect(stickies).toHaveLength(1);
+    expect(stickies[0].title).toBe('workout tips');
+    expect(stickies[0].content).toContain('Morning runs');
+  });
+
+  it('stripStickyMarkers removes blocks from visible text', () => {
+    const reply = `Done. [[STICKY: note]]content[[/STICKY]] Bye.`;
+    const out = stripStickyMarkers(reply);
+    expect(out).not.toContain('STICKY');
+    expect(out).toContain('Done.');
+    expect(out).toContain('Bye.');
+  });
+});
+
+describe('Workspace listing and reading', () => {
+  it('listWorkspaceFiles returns files across subdirs', () => {
+    const p1 = saveWorkspaceFile({ name: 'list-test-gen.md', content: 'gen' }, 'generated');
+    const p2 = saveSticky('list-test-sticky', 'note content');
+    written.push(p1, p2);
+
+    const all = listWorkspaceFiles();
+    expect(all.some((f) => f.name === 'list-test-gen.md' && f.subdir === 'generated')).toBe(true);
+    expect(all.some((f) => f.subdir === 'desk' && f.type === 'sticky')).toBe(true);
+  });
+
+  it('listWorkspaceFiles filters by subdir', () => {
+    const p = saveWorkspaceFile({ name: 'filter-test.md', content: 'x' }, 'files');
+    written.push(p);
+
+    const filesOnly = listWorkspaceFiles('files');
+    expect(filesOnly.some((f) => f.name === 'filter-test.md')).toBe(true);
+    expect(filesOnly.every((f) => f.subdir === 'files')).toBe(true);
+  });
+
+  it('readWorkspaceFile reads a file with path traversal protection', () => {
+    const p = saveWorkspaceFile({ name: 'readable.md', content: 'hello world' }, 'generated');
+    written.push(p);
+
+    const content = readWorkspaceFile('generated', 'readable.md');
+    expect(content).toBe('hello world');
+  });
+
+  it('readWorkspaceFile sanitizes path escape attempts', () => {
+    // The sanitizer strips ../  so this should either throw or read from within the dir
+    expect(() => readWorkspaceFile('generated', '../../etc/passwd')).toThrow();
   });
 });

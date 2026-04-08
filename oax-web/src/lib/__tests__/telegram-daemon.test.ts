@@ -19,7 +19,7 @@ vi.mock('../oax-engine', () => ({
 }));
 
 import { chatWithAgent, checkCronTasks } from '../oax';
-import { AMBITION_PATH, appendTask } from '../ambition';
+import { TASKS_PATH as AMBITION_PATH, appendTask } from '../tasks';
 
 let originalAmbition = '';
 beforeAll(() => {
