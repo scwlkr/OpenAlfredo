@@ -34,7 +34,7 @@ let workspaceGeneratedDir = '';
 
 const testSessionIds: string[] = [];
 
-let originalAmbition = '';
+let originalTasks = '';
 const originalDataRoot = process.env.OAX_DATA_ROOT;
 
 beforeAll(async () => {
@@ -42,7 +42,7 @@ beforeAll(async () => {
   vi.resetModules();
   const tasks = await import('../tasks');
   tasksPath = tasks.TASKS_PATH;
-  originalAmbition = fs.existsSync(tasksPath)
+  originalTasks = fs.existsSync(tasksPath)
     ? fs.readFileSync(tasksPath, 'utf-8')
     : '# Tasks\n\n## Tasks\n';
 });
@@ -61,7 +61,7 @@ beforeEach(async () => {
   lastCall.model = undefined;
   lastCall.messages = undefined;
   nextReply = 'Mocked assistant reply';
-  fs.writeFileSync(tasksPath, originalAmbition);
+  fs.writeFileSync(tasksPath, originalTasks);
 });
 
 afterAll(async () => {
@@ -74,7 +74,7 @@ afterAll(async () => {
   } else {
     process.env.OAX_DATA_ROOT = originalDataRoot;
   }
-  fs.writeFileSync(tasksPath, originalAmbition);
+  fs.writeFileSync(tasksPath, originalTasks);
   await prisma.$disconnect();
 });
 
@@ -134,7 +134,7 @@ describe('F4: Ollama model switching', () => {
     expect(session!.model).toBe('mistral');
   });
 
-  it('F13: appends to AMBITION.md and strips [[TASK:…]] from stored reply', async () => {
+  it('F13: appends to TASKS.md and strips [[TASK:…]] from stored reply', async () => {
     const marker = 'chat-task-' + Math.random().toString(36).slice(2, 8);
     nextReply = `Sure. [[TASK: ${marker} call the vet]] Anything else?`;
     const sessionId = 'test-f13-' + Math.random().toString(36).slice(2, 10);
@@ -143,8 +143,8 @@ describe('F4: Ollama model switching', () => {
     await processChatFn(sessionId, 'remind me to call the vet', 'llama3');
     await finishPromise;
 
-    const ambition = fs.readFileSync(tasksPath, 'utf-8');
-    expect(ambition).toContain(`${marker} call the vet`);
+    const tasksContent = fs.readFileSync(tasksPath, 'utf-8');
+    expect(tasksContent).toContain(`${marker} call the vet`);
 
     const entries = await prisma.transcriptEntry.findMany({
       where: { sessionId, role: 'assistant' },
@@ -162,8 +162,8 @@ describe('F4: Ollama model switching', () => {
     await processChatFn(sessionId, 'date next week — remind me day before to book', 'llama3');
     await finishPromise;
 
-    const ambition = fs.readFileSync(tasksPath, 'utf-8');
-    expect(ambition).toContain(`${marker} book dinner |when:2026-04-11T18:00:00Z`);
+    const tasksContent = fs.readFileSync(tasksPath, 'utf-8');
+    expect(tasksContent).toContain(`${marker} book dinner |when:2026-04-11T18:00:00Z`);
   });
 
   it('F15: writes [[SAVE_FILE]] content to data/workspace/ and strips marker', async () => {

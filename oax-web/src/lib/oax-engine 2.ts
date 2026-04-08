@@ -45,7 +45,7 @@ If the user asks you to remind them of something, add a task, or schedule someth
 include a marker in your reply of the form [[TASK: <task text>]] — optionally with
 |when:<ISO 8601 UTC datetime> or |recur:<spec> appended. Example:
 [[TASK: remind me to book a reservation |when:2026-04-10T15:00:00Z]]
-The marker is stripped from the visible reply and appended to AMBITION.md automatically.
+The marker is stripped from the visible reply and appended to TASKS.md automatically.
 
 If the user asks you to save a file, write a note, or draft a document to their
 workspace, wrap the file content like this:
@@ -100,7 +100,7 @@ Current Time: ${new Date().toISOString()}`;
 }
 
 // Strip marker blocks from an assistant reply and side-effect their contents
-// (append tasks to AMBITION.md, save workspace files, apply self-edits).
+// (append tasks to TASKS.md, save workspace files, apply self-edits).
 // Returns the cleaned text + a human summary of any self-edits applied.
 function handleMarkers(
   sessionId: string,

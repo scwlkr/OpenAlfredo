@@ -3,7 +3,19 @@
 import { useState, useEffect, useRef } from 'react';
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
-import { Send, Bot, User, Settings, FileText, Terminal, Clock, FolderOpen, Sparkles } from 'lucide-react';
+import {
+  Send,
+  Bot,
+  User,
+  Settings,
+  FileText,
+  Terminal,
+  Clock,
+  FolderOpen,
+  Sparkles,
+  AlertTriangle,
+  RotateCcw,
+} from 'lucide-react';
 
 import { authFetch } from '@/components/authFetch';
 import OnboardingModal from '@/components/OnboardingModal';
@@ -12,6 +24,7 @@ import TasksModal from '@/components/TasksModal';
 import WorkspacePanel from '@/components/WorkspacePanel';
 import ReflectionPanel from '@/components/ReflectionPanel';
 import SettingsPanel from '@/components/SettingsPanel';
+import { summarizeChatFailure } from '@/lib/chat-failure';
 
 const surfaceCard =
   'border border-[var(--oax-edge)] bg-[var(--oax-shell)] shadow-[0_24px_60px_-32px_var(--oax-shadow)]';
@@ -28,6 +41,7 @@ export default function Home() {
   const [sessionId, setSessionId] = useState<string>('');
   const [model, setModel] = useState('llama3');
   const [availableModels, setAvailableModels] = useState<string[]>([]);
+  const [modelCatalogWarning, setModelCatalogWarning] = useState<string | null>(null);
 
   // Modal state
   const [showLogs, setShowLogs] = useState(false);
@@ -51,17 +65,31 @@ export default function Home() {
       })
       .then(() => {
         authFetch('/api/models')
-          .then(res => res.json())
+          .then(res => {
+            if (!res.ok) {
+              throw new Error('Could not load installed Ollama models.');
+            }
+            return res.json();
+          })
           .then(data => {
             if (data.models?.length > 0) {
               const names = data.models.map((m: { name: string }) => m.name);
               setAvailableModels(names);
               setModel(names[0]);
+              setModelCatalogWarning(null);
             } else {
               setAvailableModels(['llama3', 'mistral', 'phi3']);
+              setModelCatalogWarning(
+                'Installed models could not be read from Ollama. The selector is showing fallback names.'
+              );
             }
           })
-          .catch(() => setAvailableModels(['llama3', 'mistral', 'phi3']));
+          .catch(() => {
+            setAvailableModels(['llama3', 'mistral', 'phi3']);
+            setModelCatalogWarning(
+              'Ollama is not responding right now. Start it locally, then retry or switch models before sending.'
+            );
+          });
 
         authFetch('/api/onboarding?agentId=default')
           .then(res => res.json())
@@ -75,7 +103,7 @@ export default function Home() {
   }, []);
 
   /* eslint-disable react-hooks/refs */
-  const { messages, sendMessage, status } = useChat({
+  const { messages, sendMessage, status, error, clearError, regenerate } = useChat({
     transport: new DefaultChatTransport({
       api: '/api/chat',
       body: () => sessionRef.current,
@@ -89,10 +117,13 @@ export default function Home() {
 
   const [input, setInput] = useState('');
   const isLoading = status === 'submitted' || status === 'streaming';
+  const chatFailure = summarizeChatFailure(error, model);
+  const canRetryLastTurn = messages.some(message => message.role === 'user');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (input.trim() && !isLoading) {
+      clearError();
       sendMessage({ text: input });
       setInput('');
     }
@@ -155,13 +186,19 @@ export default function Home() {
             </label>
             <select
               value={model}
-              onChange={e => setModel(e.target.value)}
+              onChange={e => {
+                setModel(e.target.value);
+                clearError();
+              }}
               className="w-full rounded-xl border border-[rgba(255,250,241,0.14)] bg-[rgba(255,250,241,0.08)] p-2 text-[var(--oax-paper)] outline-none"
             >
               {availableModels.map(m => (
                 <option key={m} value={m}>{m}</option>
               ))}
             </select>
+            {modelCatalogWarning ? (
+              <p className="mt-2 text-xs leading-5 text-[rgba(255,250,241,0.72)]">{modelCatalogWarning}</p>
+            ) : null}
           </div>
 
           {/* Memory state */}
@@ -242,6 +279,48 @@ export default function Home() {
 
         {/* Input */}
         <div className="border-t border-[var(--oax-edge)] bg-[rgba(23,21,18,0.04)] p-6">
+          {chatFailure ? (
+            <div className="mx-auto mb-4 max-w-3xl rounded-[24px] border border-[rgba(185,138,61,0.45)] bg-[rgba(185,138,61,0.12)] p-4 text-[var(--oax-ink)] shadow-[0_20px_40px_-30px_var(--oax-shadow)]">
+              <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                <div className="flex gap-3">
+                  <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[rgba(185,138,61,0.18)] text-[var(--oax-brass)]">
+                    <AlertTriangle className="h-5 w-5" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="font-medium">{chatFailure.title}</p>
+                    <p className="text-sm text-[var(--oax-ink)]/80">{chatFailure.detail}</p>
+                    <p className="text-xs uppercase tracking-[0.16em] text-[var(--oax-muted)]">{chatFailure.hint}</p>
+                    {chatFailure.technicalDetail &&
+                    chatFailure.technicalDetail !== chatFailure.detail ? (
+                      <p className="pt-1 font-mono text-xs text-[var(--oax-muted)]">
+                        {chatFailure.technicalDetail}
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+
+                <div className="flex shrink-0 flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => regenerate()}
+                    disabled={isLoading || !canRetryLastTurn}
+                    className="inline-flex items-center gap-2 rounded-2xl bg-[var(--oax-basil)] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[var(--oax-basil-strong)] disabled:opacity-40"
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                    Retry Response
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => clearError()}
+                    className="rounded-2xl border border-[var(--oax-edge)] bg-[var(--oax-shell)] px-4 py-2 text-sm font-medium text-[var(--oax-ink)] transition-colors hover:bg-[#efe5d1]"
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : null}
+
           <form onSubmit={handleSubmit} className="max-w-3xl mx-auto flex gap-3">
             <input
               value={input}

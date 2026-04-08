@@ -19,21 +19,21 @@ vi.mock('../oax-engine', () => ({
 }));
 
 import { chatWithAgent, checkCronTasks } from '../oax';
-import { TASKS_PATH as AMBITION_PATH, appendTask } from '../tasks';
+import { TASKS_PATH, appendTask } from '../tasks';
 
-let originalAmbition = '';
+let originalTasks = '';
 beforeAll(() => {
-  originalAmbition = fs.existsSync(AMBITION_PATH)
-    ? fs.readFileSync(AMBITION_PATH, 'utf-8')
-    : '# AMBITION\n\n## Tasks\n';
+  originalTasks = fs.existsSync(TASKS_PATH)
+    ? fs.readFileSync(TASKS_PATH, 'utf-8')
+    : '# Tasks\n\n## Tasks\n';
 });
 beforeEach(() => {
   mockGenerate.mockReset();
   mockProcessChatSync.mockReset();
-  fs.writeFileSync(AMBITION_PATH, originalAmbition);
+  fs.writeFileSync(TASKS_PATH, originalTasks);
 });
 afterAll(async () => {
-  fs.writeFileSync(AMBITION_PATH, originalAmbition);
+  fs.writeFileSync(TASKS_PATH, originalTasks);
   await prisma.$disconnect();
 });
 
@@ -75,7 +75,7 @@ describe('F12: checkCronTasks is deterministic (no LLM call)', () => {
   });
 
   it('returns null when no tasks are due', async () => {
-    fs.writeFileSync(AMBITION_PATH, '# AMBITION\n\n## Tasks\n');
+    fs.writeFileSync(TASKS_PATH, '# Tasks\n\n## Tasks\n');
     const out = await checkCronTasks();
     expect(out).toBeNull();
     expect(mockGenerate).not.toHaveBeenCalled();

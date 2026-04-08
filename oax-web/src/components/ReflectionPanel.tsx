@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Sparkles, X, RefreshCw } from 'lucide-react';
+import { Sparkles, X, RefreshCw, AlertTriangle } from 'lucide-react';
 import { authFetch } from './authFetch';
 
 interface ReflectionPanelProps {
@@ -13,18 +13,33 @@ export default function ReflectionPanel({ surfaceCard, onClose }: ReflectionPane
   const [reflection, setReflection] = useState('');
   const [loading, setLoading] = useState(true);
   const [regenerating, setRegenerating] = useState(false);
+  const [error, setError] = useState<{ title: string; message: string } | null>(null);
 
   useEffect(() => {
     let isMounted = true;
 
     authFetch('/api/ambition')
-      .then(res => res.json())
+      .then(async res => {
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error || 'Could not load the current reflection.');
+        }
+        return data;
+      })
       .then(data => {
         if (isMounted) {
           setReflection(data.reflection || '');
+          setError(null);
         }
       })
-      .catch(() => {})
+      .catch(err => {
+        if (isMounted) {
+          setError({
+            title: 'Could not load reflection.',
+            message: err instanceof Error ? err.message : 'Could not load the current reflection.',
+          });
+        }
+      })
       .finally(() => {
         if (isMounted) {
           setLoading(false);
@@ -38,11 +53,20 @@ export default function ReflectionPanel({ surfaceCard, onClose }: ReflectionPane
 
   const regenerate = async () => {
     setRegenerating(true);
+    setError(null);
     try {
       const res = await authFetch('/api/ambition', { method: 'POST' });
       const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Could not regenerate reflection.');
+      }
       setReflection(data.reflection || '');
-    } catch {}
+    } catch (err) {
+      setError({
+        title: 'Reflection generation failed.',
+        message: err instanceof Error ? err.message : 'Could not regenerate reflection.',
+      });
+    }
     setRegenerating(false);
   };
 
@@ -71,6 +95,18 @@ export default function ReflectionPanel({ surfaceCard, onClose }: ReflectionPane
         </div>
 
         <div className="flex-1 overflow-y-auto p-6">
+          {error ? (
+            <div className="mb-4 rounded-2xl border border-[rgba(185,138,61,0.4)] bg-[rgba(185,138,61,0.12)] p-4 text-sm text-[var(--oax-ink)]">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-[var(--oax-brass)]" />
+                <div>
+                  <p className="font-medium">{error.title}</p>
+                  <p className="mt-1 text-[var(--oax-ink)]/80">{error.message}</p>
+                </div>
+              </div>
+            </div>
+          ) : null}
+
           {loading ? (
             <div className="flex h-full items-center justify-center text-[var(--oax-muted)]">Loading reflection...</div>
           ) : reflection ? (

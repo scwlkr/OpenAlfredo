@@ -77,9 +77,11 @@ Both entry points upsert a `ChatSession`, persist user + assistant `TranscriptEn
 
 All retrievals go through `logInfo('context_retrieved', …)` in `src/lib/logger.ts`, which appends JSONL to `oax-web/data/logs/oax-<date>.jsonl`. The UI's "View System Logs" modal (`src/app/page.tsx`) polls `/api/logs` every 3s.
 
-### AMBITION task list
+### Tasks + AMBITION
 
-`src/lib/ambition.ts` owns `AMBITION.md` (currently at repo root, shared by both surfaces). Tasks support optional `|when:<ISO>` and `|recur:<spec>` suffixes. The `/api/ambition` route exposes GET/POST/PATCH/DELETE for the UI's task panel. `dueTasks()` returns tasks whose `|when:` falls inside the last 30 minutes — used by the deterministic cron check.
+`src/lib/tasks.ts` owns `TASKS.md` at `oax-web/data/TASKS.md`. Tasks support optional `|when:<ISO>` and `|recur:<spec>` suffixes, and the `/api/tasks` route exposes GET/POST/PATCH/DELETE for the UI's task panel. `dueTasks()` returns tasks whose `|when:` falls inside the last 30 minutes — used by the deterministic cron check.
+
+`src/lib/ambition.ts` owns the reflection layer at `oax-web/data/AMBITION.md`. The `/api/ambition` route exposes GET for reading the current brief and POST for regenerating it.
 
 ### Telegram + cron daemon (`src/lib/oax.ts`)
 
@@ -91,8 +93,8 @@ Runs out of `daemon.ts` via `tsx`. Delegates all user chat to `processChatSync`,
 
 Owns two cron workers:
 
-- **AMBITION cron** (`*/30 * * * *` default) — `checkCronTasks()` calls `ambition.dueTasks()` deterministically (no LLM) and sends due items to the subscribed Telegram chat.
-- **RESTLESS heartbeat** (`0 * * * *` default) — `runHeartbeat()` wakes the agent between user messages. Reads the canonical SOUL (`oax-web/data/agents/default/SOUL.md`) + current AMBITION + last 10 heartbeat log entries, and asks the LLM to emit `[[NOTIFY]]` / `[[TASK]]` / `[[REFLECT]]` / `[[REST]]` tokens. Logs each tick to `RESTLESS.md` at the repo root (capped at 50 entries). New tasks are appended via the shared `appendTask()`.
+- **AMBITION cron** (`*/30 * * * *` default) — `checkCronTasks()` calls `tasks.dueTasks()` deterministically (no LLM) and sends due items to the subscribed Telegram chat.
+- **RESTLESS heartbeat** (`0 * * * *` default) — `runHeartbeat()` wakes the agent between user messages. Reads the canonical SOUL (`oax-web/data/agents/default/SOUL.md`) + current AMBITION + current TASKS + last 10 heartbeat log entries, and asks the LLM to emit `[[NOTIFY]]` / `[[TASK]]` / `[[REFLECT]]` / `[[REST]]` tokens. Logs each tick to `oax-web/data/RESTLESS.log.md` (capped at 50 entries). New tasks are appended via the shared `appendTask()`.
 
 **Daemon bot commands** (all paired-gated via `isPaired()` except `/pair`):
 
@@ -101,7 +103,7 @@ Owns two cron workers:
 | `/pair <code>` | adds chat to allowlist | only cmd an unpaired chat can use |
 | `/unpair` | removes chat from allowlist | |
 | `/start` | subscribe to proactive alerts | persists `savedChatId` |
-| `/status` | prints AMBITION.md | markdown-fenced |
+| `/status` | prints AMBITION + TASKS | markdown-fenced |
 | `/heartbeat` | forces `runHeartbeat()` | shows NOTIFY/TASK/REFLECT tokens |
 | `/model` / `/model <n\|name>` | list or switch Ollama model | persists in `.telegram-models.json` |
 | `/restart` | calls `triggerPodRestart()` | detached respawn helper + daemon exits |
@@ -143,5 +145,5 @@ Schema: `oax-web/prisma/schema.prisma` — SQLite, two models: `ChatSession` and
 ## Other Notes
 
 - `package.json` at the repo root declares `"type": "commonjs"`; `oax-web/` is an ES module / Next.js project. Don't copy tooling config between them.
-- Repo-root `SOUL.md` and `memory/` are leftover stubs from the pre-unification Telegram surface. Nothing reads them anymore — the canonical SOUL is `oax-web/data/agents/default/SOUL.md` and the canonical memory lives in `oax-web/data/memory/`. Safe to delete when convenient. `RESTLESS.md` at the repo root is still live — it's the heartbeat log.
-- `AMBITION.md` currently lives at the repo root and is shared by both surfaces via `ambition.ts`. If you ever move it, update only the path inside `ambition.ts`.
+- Repo-root `SOUL.md` and `memory/` are leftover stubs from the pre-unification Telegram surface. Nothing reads them anymore — the canonical SOUL is `oax-web/data/agents/default/SOUL.md` and the canonical memory lives in `oax-web/data/memory/`. The heartbeat log now lives at `oax-web/data/RESTLESS.log.md`, with a repo-root `RESTLESS.md` fallback only for legacy installs.
+- Runtime state now lives under `oax-web/data/`, including `TASKS.md` and `AMBITION.md`. If you move them, update the single-source-of-truth paths in `src/lib/paths.ts`.

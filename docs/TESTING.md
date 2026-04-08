@@ -33,6 +33,7 @@ All test files live in `oax-web/src/lib/__tests__/`:
 | File | What it tests |
 |------|--------------|
 | `tasks.test.ts` | Task CRUD, marker parsing, `dueTasks()` cron logic, `/api/tasks` route |
+| `chat-failure.test.ts` | Chat failure classification, structured transport payload parsing, UI summary copy |
 | `ambition-reflection.test.ts` | Reflection prompt construction, `generateReflection()`, AMBITION.md writing |
 | `workspace.test.ts` | File saves (with subdir routing), sticky notes, listing, path traversal protection |
 | `chat-api.test.ts` | Web chat streaming, model switching, marker handling (TASK, SAVE_FILE) |

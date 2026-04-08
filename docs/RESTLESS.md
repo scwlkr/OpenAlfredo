@@ -24,13 +24,13 @@ The heartbeat log lives at `oax-web/data/RESTLESS.log.md` (gitignored).
 
 ## Protocol
 
-When the agent wakes, it is given SOUL, AMBITION, and the last 10 log
+When the agent wakes, it is given SOUL, AMBITION, TASKS, and the last 10 log
 entries. It emits one or more of these tokens, which the daemon parses:
 
 | Token | Effect |
 |---|---|
 | `[[NOTIFY: <message>]]` | Sends `<message>` to the most recent Telegram chat. |
-| `[[TASK: <task>]]` | Appends a new task to `AMBITION.md`. |
+| `[[TASK: <task>]]` | Appends a new task to `TASKS.md`. |
 | `[[REFLECT: <thought>]]` | Records a thought to the heartbeat log. No user-visible output. |
 | `[[REST]]` | No action this tick. The agent is at rest. |
 

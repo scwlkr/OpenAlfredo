@@ -58,7 +58,7 @@ Telegram chat becomes its own OAX session (`telegram-<chatId>`).
 | Command | Action |
 |---|---|
 | `/start` | Subscribe to proactive alerts |
-| `/status` | Show current AMBITION.md |
+| `/status` | Show current AMBITION reflection and TASKS.md |
 | `/heartbeat` | Force a heartbeat tick now |
 | `/model` | List installed Ollama models |
 | `/model <n\|name>` | Switch this chat to a different model |
