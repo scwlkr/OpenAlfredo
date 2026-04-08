@@ -19,6 +19,8 @@ const DATA_DIR = path.join(OAX_WEB, 'data');
 const LOG_DIR = path.join(DATA_DIR, 'logs');
 const PID_FILE = path.join(DATA_DIR, '.oax-pod.json');
 const OLLAMA_URL = 'http://localhost:11434/api/tags';
+const TURBOPACK_CACHE_DIR = path.join(OAX_WEB, '.next', 'dev', 'cache', 'turbopack');
+const VALID_TURBOPACK_FILE = /^(CURRENT|LOCK|LOG|LOG\.old|MANIFEST-\d+|OPTIONS-\d+|\d+\.(meta|sst))$/;
 
 function isAlive(pid) {
   if (!pid) return false;
@@ -59,6 +61,37 @@ function readNextDevLock() {
   } catch {
     return null;
   }
+}
+function findUnexpectedTurbopackEntries(rootDir = TURBOPACK_CACHE_DIR) {
+  if (!fs.existsSync(rootDir)) return [];
+
+  const unexpected = [];
+  const walk = (dir) => {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const abs = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        walk(abs);
+        continue;
+      }
+      if (!VALID_TURBOPACK_FILE.test(entry.name)) {
+        unexpected.push(path.relative(rootDir, abs));
+      }
+    }
+  };
+
+  walk(rootDir);
+  return unexpected;
+}
+function repairTurbopackCache() {
+  const unexpected = findUnexpectedTurbopackEntries();
+  if (unexpected.length === 0) return;
+
+  const preview = unexpected.slice(0, 5).join(', ');
+  const suffix = unexpected.length > 5 ? `, +${unexpected.length - 5} more` : '';
+  console.warn('⚠️  Found unexpected files in the Turbopack cache.');
+  console.warn(`   Examples: ${preview}${suffix}`);
+  console.warn('   Clearing oax-web/.next/dev/cache/turbopack before starting Next dev...');
+  fs.rmSync(TURBOPACK_CACHE_DIR, { recursive: true, force: true });
 }
 function writePodState(state) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -126,6 +159,7 @@ async function startPod() {
 
   // 2. Next dev (web dashboard)
   console.log('→ Starting web dashboard...');
+  repairTurbopackCache();
   const webLog = path.join(LOG_DIR, 'pod-web.log');
   const web = spawn('npm', ['run', 'dev'], {
     cwd: OAX_WEB,
@@ -279,6 +313,7 @@ async function startSandbox({ profile, fixture, reset, port }) {
   console.log(`   Data:    ${path.relative(path.join(__dirname, '..'), dataDir)}`);
   console.log(`   Env:     ${path.relative(path.join(__dirname, '..'), envPath)}`);
 
+  repairTurbopackCache();
   const nextProcess = spawn('npm', ['run', 'dev'], {
     cwd: OAX_WEB,
     stdio: 'inherit',
@@ -312,6 +347,7 @@ yargs(hideBin(process.argv))
   .completion('completion', 'Generate completion script for zsh/bash')
   .command('dashboard', 'Start only the web dashboard (no daemon, no ollama)', () => {}, async () => {
     console.log('Starting OAX Web Dashboard...');
+    repairTurbopackCache();
     const nextProcess = spawn('npm', ['run', 'dev'], { cwd: OAX_WEB, stdio: 'inherit' });
     setTimeout(async () => {
       console.log('Opening dashboard at http://localhost:3000 ...');
