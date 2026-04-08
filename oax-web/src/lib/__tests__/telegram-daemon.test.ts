@@ -5,11 +5,11 @@ import { prisma } from '../db';
 
 // The Telegram daemon now delegates to the shared engine (oax-engine.ts via
 // processChatSync), so it uses the same SQLite transcripts + memory retrieval
-// + [[TASK]] markers as the web UI. `ollama` is only imported by runHeartbeat
-// inside oax.ts, so we still mock it to isolate tests from a running Ollama.
+// + [[TASK]] markers as the web UI. Heartbeat generation still talks to the
+// shared Ollama client, so we mock that client here.
 const { mockGenerate } = vi.hoisted(() => ({ mockGenerate: vi.fn() }));
-vi.mock('ollama', () => ({
-  default: { generate: mockGenerate, chat: vi.fn() },
+vi.mock('../ollama-client', () => ({
+  ollamaClient: { generate: mockGenerate },
 }));
 
 // processChatSync is the shared engine entry point — stub it so we can assert

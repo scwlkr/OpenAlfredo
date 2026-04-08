@@ -81,6 +81,25 @@ export function buildChatFailurePayload(error: unknown, model?: string): ChatFai
 
   if (
     containsAny(normalized, [
+      'headers timeout',
+      'und_err_headers_timeout',
+      'body timeout',
+      'und_err_body_timeout',
+    ])
+  ) {
+    return {
+      code: 'CHAT_MODEL_FAILED',
+      error: model
+        ? `Model "${model}" took too long to start responding.`
+        : 'The selected model took too long to start responding.',
+      hint: 'Switch to a smaller Ollama model or retry after the model is warm.',
+      detail,
+      model,
+    };
+  }
+
+  if (
+    containsAny(normalized, [
       'econnrefused',
       'fetch failed',
       'failed to fetch',

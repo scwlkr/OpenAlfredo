@@ -17,11 +17,11 @@ import {
   SelfEditResult,
 } from './self-edit';
 import { triggerPodRestart, wantsRestart, stripRestartMarker } from './restart';
-import { logInfo } from './logger';
+import { buildChatFailurePayload } from './chat-failure';
+import { logError, logInfo } from './logger';
+import { ollamaProvider } from './ollama-client';
 import { defaultOaxModel } from './runtime-settings';
 import { streamText, generateText } from 'ai';
-import { createOllama } from 'ai-sdk-ollama';
-const ollama = createOllama();
 
 // Ensure a ChatSession row exists for sessionId. Returns the session.
 async function ensureSession(sessionId: string, agentId: string, model: string) {
@@ -228,11 +228,14 @@ export async function processChat(
   const systemPrompt = buildSystemPrompt(context);
 
   const stream = await streamText({
-    model: ollama(model) as any,
+    model: ollamaProvider(model) as any,
     messages: [
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userMessage },
     ],
+    onError: ({ error }) => {
+      logError('chat_stream_failed', buildChatFailurePayload(error, model));
+    },
     onFinish: async ({ text }) => {
       const { cleaned } = handleMarkers(sessionId, text);
       await prisma.transcriptEntry.create({
@@ -241,7 +244,9 @@ export async function processChat(
     },
   });
 
-  return stream.toUIMessageStreamResponse();
+  return stream.toUIMessageStreamResponse({
+    onError: (error) => JSON.stringify(buildChatFailurePayload(error, model)),
+  });
 }
 
 // Non-streaming chat turn — used by the Telegram daemon. Same memory retrieval,
@@ -268,7 +273,7 @@ export async function processChatSync(
     { role: 'user', content: userMessage },
   ];
 
-  let result = await generateText({ model: ollama(model) as any, messages });
+  let result = await generateText({ model: ollamaProvider(model) as any, messages });
 
   // One-round READ reflex: if the model asked to read files, feed them back
   // and generate the real answer.
@@ -276,7 +281,7 @@ export async function processChatSync(
   if (readFollowup) {
     messages.push({ role: 'assistant', content: result.text });
     messages.push({ role: 'user', content: readFollowup });
-    result = await generateText({ model: ollama(model) as any, messages });
+    result = await generateText({ model: ollamaProvider(model) as any, messages });
   }
 
   const { cleaned } = handleMarkers(sessionId, result.text);

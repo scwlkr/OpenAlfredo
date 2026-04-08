@@ -31,6 +31,17 @@ describe('chat failure classification', () => {
     expect(chatFailureStatus(payload.code)).toBe(404);
   });
 
+  it('classifies headers timeouts as a slow model startup', () => {
+    const payload = buildChatFailurePayload(
+      new Error('fetch failed: Headers Timeout Error (UND_ERR_HEADERS_TIMEOUT)'),
+      'gemma4:26b'
+    );
+
+    expect(payload.code).toBe('CHAT_MODEL_FAILED');
+    expect(payload.error).toContain('took too long to start responding');
+    expect(payload.hint).toContain('smaller Ollama model');
+  });
+
   it('parses structured server payloads from the chat transport error message', () => {
     const parsed = parseChatFailurePayload(
       JSON.stringify({

@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
-import ollama from 'ollama';
+import { ollamaClient } from '@/lib/ollama-client';
 
 export async function GET() {
   try {
-    const list = await ollama.list();
+    const list = await ollamaClient.list();
     return NextResponse.json({ models: list.models });
   } catch (error) {
     console.error('Error fetching ollama models:', error);

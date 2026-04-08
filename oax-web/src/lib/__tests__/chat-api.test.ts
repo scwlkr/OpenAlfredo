@@ -24,8 +24,8 @@ vi.mock('ai', () => ({
   },
 }));
 
-vi.mock('ai-sdk-ollama', () => ({
-  createOllama: () => (modelName: string) => ({ __tag: 'ollama', modelName }),
+vi.mock('../ollama-client', () => ({
+  ollamaProvider: (modelName: string) => ({ __tag: 'ollama', modelName }),
 }));
 
 type ProcessChatFn = typeof import('../oax-engine').processChat;

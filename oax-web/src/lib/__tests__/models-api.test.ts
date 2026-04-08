@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 
-vi.mock('ollama', () => ({
-  default: {
+vi.mock('@/lib/ollama-client', () => ({
+  ollamaClient: {
     list: vi.fn().mockResolvedValue({
       models: [{ name: 'llama3' }, { name: 'mistral' }, { name: 'phi3' }],
     }),

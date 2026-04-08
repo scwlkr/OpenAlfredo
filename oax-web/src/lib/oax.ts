@@ -4,8 +4,8 @@
 // same [[TASK]] / [[SAVE_FILE]] marker handling.
 import fs from 'fs';
 import path from 'path';
-import ollama from 'ollama';
 import { processChatSync } from './oax-engine';
+import { ollamaClient } from './ollama-client';
 import { readAmbition } from './ambition';
 import { readTasks, dueTasks, appendTask } from './tasks';
 import { LEGACY_RESTLESS_PATH } from './repo-paths';
@@ -170,7 +170,7 @@ Emit one or more of these tokens. Do not explain. Do not chat. Be concise.`;
 
   let raw = '';
   try {
-    const response = await ollama.generate({
+    const response = await ollamaClient.generate({
       model: defaultOaxModel(),
       prompt: systemPrompt,
     });

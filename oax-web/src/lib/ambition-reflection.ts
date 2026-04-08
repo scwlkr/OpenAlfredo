@@ -15,6 +15,7 @@ import { prisma } from './db';
 import { readAmbition, writeAmbition, AMBITION_PATH } from './ambition';
 import { DEFAULT_SOUL_PATH, RESTLESS_LOG_PATH, WORKSPACE_DIR, THEMES_FILE } from './paths';
 import { logInfo, logError } from './logger';
+import { ollamaClient } from './ollama-client';
 import { defaultOaxModel } from './runtime-settings';
 
 const HEARTBEAT_LOG_START = '<!-- heartbeat-log-start -->';
@@ -150,9 +151,7 @@ export async function generateReflection(
   if (generateFn) {
     reflection = await generateFn(prompt);
   } else {
-    // Default: use Ollama directly
-    const ollama = (await import('ollama')).default;
-    const response = await ollama.generate({
+    const response = await ollamaClient.generate({
       model: defaultOaxModel(),
       prompt,
     });
