@@ -18,7 +18,6 @@ import {
 } from './self-edit';
 import { triggerPodRestart, wantsRestart, stripRestartMarker } from './restart';
 import { logInfo } from './logger';
-import { defaultOaxModel } from './runtime-settings';
 import { streamText, generateText } from 'ai';
 import { createOllama } from 'ai-sdk-ollama';
 const ollama = createOllama();
@@ -54,7 +53,7 @@ workspace, wrap the file content like this:
 # Business Plan
 ...contents...
 [[/SAVE_FILE]]
-The block is stripped from the visible reply; the file is saved to the generated area of the workspace.
+The block is stripped from the visible reply; the file is saved under data/workspace/generated/.
 
 If you want to leave a quick note on the user's desk (like a sticky note or idea),
 wrap it like this:
@@ -82,7 +81,7 @@ To overwrite a whole file, emit:
 ...new file contents...
 [[/WRITE_FILE]]
 
-Paths under .git, node_modules, .next, the active runtime data root, or database files are blocked.
+Paths under .git, node_modules, .next, data/, or database files are blocked.
 
 Changes take effect only after the pod restarts. If your edits need to be
 active immediately (changing cron schedules, timers, daemon behavior, new
@@ -213,11 +212,7 @@ function resolveReadMarkers(text: string): string | null {
 // file contents appended via the reflex logic on the assistant's prior
 // message. (The telegram path runs the reflex automatically; the web path
 // keeps streaming responsive.)
-export async function processChat(
-  sessionId: string,
-  userMessage: string,
-  model: string = defaultOaxModel()
-) {
+export async function processChat(sessionId: string, userMessage: string, model: string = process.env.OAX_MODEL || 'llama3') {
   const session = await ensureSession(sessionId, 'default', model);
 
   await prisma.transcriptEntry.create({
@@ -252,7 +247,7 @@ export async function processChatSync(
   sessionId: string,
   userMessage: string,
   agentId: string = 'default',
-  model: string = defaultOaxModel()
+  model: string = process.env.OAX_MODEL || 'llama3'
 ): Promise<string> {
   const session = await ensureSession(sessionId, agentId, model);
 

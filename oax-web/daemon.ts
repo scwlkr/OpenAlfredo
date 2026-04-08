@@ -12,15 +12,21 @@ import { readTasks } from './src/lib/tasks';
 import { generateReflection } from './src/lib/ambition-reflection';
 import { runContinuityLoop } from './src/lib/continuity';
 import { triggerPodRestart } from './src/lib/restart';
+import { sanitizeRuntimeSettings, isSettingEnabled } from './src/lib/runtime-settings';
 
 const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN || '';
-const HEARTBEAT_CRON = process.env.HEARTBEAT_CRON || '0 * * * *'; // hourly by default
-const HEARTBEAT_ACTIVE = (process.env.HEARTBEAT_ACTIVE || 'true').toLowerCase() !== 'false';
-const AMBITION_CRON = process.env.AMBITION_CRON || '*/30 * * * *';
-const REFLECTION_CRON = process.env.REFLECTION_CRON || '0 7 * * *'; // daily 7am
-const REFLECTION_ACTIVE = (process.env.REFLECTION_ACTIVE || 'true').toLowerCase() !== 'false';
-const CONTINUITY_CRON = process.env.CONTINUITY_CRON || '0 10,16 * * *'; // twice daily
-const CONTINUITY_ACTIVE = (process.env.CONTINUITY_ACTIVE || 'true').toLowerCase() !== 'false';
+const { settings: runtimeSettings, issues: runtimeSettingIssues } = sanitizeRuntimeSettings(process.env);
+for (const issue of runtimeSettingIssues) {
+  console.warn(`Ignoring invalid runtime setting ${issue.key}: ${issue.message}`);
+}
+
+const HEARTBEAT_CRON = runtimeSettings.HEARTBEAT_CRON; // hourly by default
+const HEARTBEAT_ACTIVE = isSettingEnabled(runtimeSettings.HEARTBEAT_ACTIVE);
+const AMBITION_CRON = runtimeSettings.AMBITION_CRON;
+const REFLECTION_CRON = runtimeSettings.REFLECTION_CRON; // daily 7am
+const REFLECTION_ACTIVE = isSettingEnabled(runtimeSettings.REFLECTION_ACTIVE);
+const CONTINUITY_CRON = runtimeSettings.CONTINUITY_CRON; // twice daily
+const CONTINUITY_ACTIVE = isSettingEnabled(runtimeSettings.CONTINUITY_ACTIVE);
 
 // Persist the latest Telegram chat ID so proactive notifications survive restarts.
 const DATA_DIR = path.join(process.cwd(), 'data');
@@ -28,7 +34,7 @@ const CHAT_ID_FILE = path.join(DATA_DIR, '.telegram-chat-id');
 const ALLOWLIST_FILE = path.join(DATA_DIR, '.telegram-allowlist.json');
 const PAIRING_CODE_FILE = path.join(DATA_DIR, '.telegram-pairing-code');
 const MODEL_MAP_FILE = path.join(DATA_DIR, '.telegram-models.json');
-const DEFAULT_MODEL = process.env.OAX_MODEL || 'llama3';
+const DEFAULT_MODEL = runtimeSettings.OAX_MODEL;
 
 function loadChatId(): number | null {
   try {

@@ -10,6 +10,39 @@ interface SettingsPanelProps {
 }
 
 type CronPreset = { label: string; value: string };
+type SettingIssue = { key: string; message: string };
+
+function summarizeRepairWarning(issues: SettingIssue[] | undefined): string | null {
+  if (!Array.isArray(issues) || issues.length === 0) return null;
+  const keys = Array.from(new Set(issues.map(issue => issue.key))).join(', ');
+  return `Some saved settings were invalid and are being shown with safe defaults: ${keys}. Save to persist the repaired values.`;
+}
+
+function summarizeSaveError(payload: any): string {
+  if (Array.isArray(payload?.issues) && payload.issues.length > 0) {
+    if (payload.issues.length === 1 && payload.issues[0]?.message) {
+      return payload.issues[0].message;
+    }
+
+    const keys = Array.from(
+      new Set(
+        payload.issues
+          .map((issue: SettingIssue | undefined) => issue?.key)
+          .filter((value: string | undefined): value is string => Boolean(value))
+      )
+    );
+
+    if (keys.length > 0) {
+      return `These settings need attention: ${keys.join(', ')}.`;
+    }
+  }
+
+  if (typeof payload?.error === 'string' && payload.error.trim()) {
+    return payload.error;
+  }
+
+  return 'Could not save settings.';
+}
 
 const heartbeatPresets: CronPreset[] = [
   { label: 'Every 15 min', value: '*/15 * * * *' },
@@ -30,32 +63,64 @@ export default function SettingsPanel({ surfaceCard, onClose }: SettingsPanelPro
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [warning, setWarning] = useState<string | null>(null);
 
-  const fetchSettings = async () => {
-    try {
-      const res = await authFetch('/api/settings');
-      const data = await res.json();
-      setSettings(data.settings || {});
-    } catch {}
-    setLoading(false);
-  };
+  useEffect(() => {
+    let isMounted = true;
 
-  useEffect(() => { fetchSettings(); }, []);
+    authFetch('/api/settings')
+      .then(res => res.json())
+      .then(data => {
+        if (isMounted) {
+          setSettings(data.settings || {});
+          setWarning(summarizeRepairWarning(data.issues));
+          setError(null);
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (isMounted) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const updateSetting = (key: string, value: string) => {
     setSettings(prev => ({ ...prev, [key]: value }));
     setSaved(false);
+    setError(null);
   };
 
   const saveSettings = async () => {
     setSaving(true);
-    await authFetch('/api/settings', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ settings }),
-    });
-    setSaving(false);
-    setSaved(true);
+    setSaved(false);
+    setError(null);
+
+    try {
+      const response = await authFetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ settings }),
+      });
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        setError(summarizeSaveError(payload));
+        return;
+      }
+
+      setSaved(true);
+      setWarning(null);
+    } catch {
+      setError('Could not save settings.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (loading) {
@@ -65,6 +130,18 @@ export default function SettingsPanel({ surfaceCard, onClose }: SettingsPanelPro
       </div>
     );
   }
+
+  const statusMessage =
+    error ||
+    warning ||
+    (saved ? 'Saved. Restart the pod for changes to take effect.' : 'Changes are written to .env');
+  const statusClass = error
+    ? 'text-[#9a4139]'
+    : warning
+      ? 'text-[#8b6a17]'
+      : saved
+        ? 'text-[var(--oax-basil)]'
+        : 'text-[var(--oax-muted)]';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(23,21,18,0.55)] p-6 backdrop-blur-sm">
@@ -227,9 +304,7 @@ export default function SettingsPanel({ surfaceCard, onClose }: SettingsPanelPro
         </div>
 
         <div className="border-t border-[var(--oax-edge)] bg-[#f1e8d9] p-4 flex items-center justify-between">
-          <p className="text-xs text-[var(--oax-muted)]">
-            {saved ? 'Saved. Restart the pod for changes to take effect.' : 'Changes are written to .env'}
-          </p>
+          <p className={`text-xs ${statusClass}`}>{statusMessage}</p>
           <button
             onClick={saveSettings}
             disabled={saving}

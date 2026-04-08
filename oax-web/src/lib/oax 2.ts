@@ -13,9 +13,7 @@ import {
   DEFAULT_SOUL_PATH as SOUL_PATH,
   RESTLESS_LOG_PATH,
   LEGACY_RESTLESS_PATH,
-  THEMES_FILE,
 } from './paths';
-import { defaultOaxModel } from './runtime-settings';
 
 // Heartbeat log lives under oax-web/data/ (gitignored). If only the legacy
 // repo-root RESTLESS.md exists (pre-migration owner), read from it but always
@@ -116,21 +114,6 @@ export async function runHeartbeat(): Promise<HeartbeatResult> {
   const tasks = readTasks();
   const restless = readFileSafe(RESTLESS_PATH);
 
-  // Load active themes so heartbeat decisions are theme-aware
-  let themeSummary = '';
-  try {
-    if (fs.existsSync(THEMES_FILE)) {
-      const data = JSON.parse(fs.readFileSync(THEMES_FILE, 'utf-8'));
-      const active = (data.themes || [])
-        .filter((t: any) => t.strength >= 0.3)
-        .sort((a: any, b: any) => b.strength - a.strength)
-        .slice(0, 5);
-      if (active.length > 0) {
-        themeSummary = active.map((t: any) => `- ${t.tag} (${t.strength.toFixed(2)})`).join('\n');
-      }
-    }
-  } catch {}
-
   const logTail = restless.includes(HEARTBEAT_LOG_START)
     ? restless
         .split(HEARTBEAT_LOG_START)[1]
@@ -152,9 +135,6 @@ ${ambition || '(no reflection yet)'}
 TASKS (your open task list):
 ${tasks || '(no tasks yet)'}
 
-ACTIVE USER THEMES (from continuity loop):
-${themeSummary || '(no tracked themes yet)'}
-
 RECENT HEARTBEATS (your own recent thoughts):
 ${logTail || '(none yet — this is your first heartbeat)'}
 
@@ -171,7 +151,7 @@ Emit one or more of these tokens. Do not explain. Do not chat. Be concise.`;
   let raw = '';
   try {
     const response = await ollama.generate({
-      model: defaultOaxModel(),
+      model: process.env.OAX_MODEL || 'llama3',
       prompt: systemPrompt,
     });
     raw = response.response;

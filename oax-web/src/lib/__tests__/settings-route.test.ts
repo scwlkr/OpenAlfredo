@@ -37,6 +37,7 @@ describe('/api/settings runtime env overlay', () => {
     const initial = await route.GET();
     const initialJson = await initial.json();
     expect(initialJson.settings.OAX_MODEL).toBe('llama3');
+    expect(initialJson.settings.HEARTBEAT_CRON).toBe('0 * * * *');
 
     const update = await route.POST(
       new Request('http://local/api/settings', {
@@ -56,5 +57,87 @@ describe('/api/settings runtime env overlay', () => {
     expect(overlayContent).toContain('OAX_MODEL="mistral"');
     expect(overlayContent).toContain('HEARTBEAT_ACTIVE="false"');
     expect(fs.readFileSync(baseEnvPath, 'utf-8')).toBe(baseEnvSnapshot);
+  });
+
+  it('rejects invalid cron expressions without mutating the overlay', async () => {
+    vi.resetModules();
+    const route = await import('../../app/api/settings/route');
+
+    const update = await route.POST(
+      new Request('http://local/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          settings: {
+            HEARTBEAT_CRON: 'every minute please',
+          },
+        }),
+      })
+    );
+
+    expect(update.status).toBe(400);
+    const json = await update.json();
+    expect(json.code).toBe('SETTINGS_VALIDATION_FAILED');
+    expect(json.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ key: 'HEARTBEAT_CRON', code: 'SETTINGS_INVALID_CRON' }),
+      ])
+    );
+    expect(fs.readFileSync(overlayEnvPath, 'utf-8')).toBe('OAX_MODEL="llama3"\n');
+  });
+
+  it('rejects malformed boolean values', async () => {
+    vi.resetModules();
+    const route = await import('../../app/api/settings/route');
+
+    const update = await route.POST(
+      new Request('http://local/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          settings: {
+            HEARTBEAT_ACTIVE: 'sometimes',
+          },
+        }),
+      })
+    );
+
+    expect(update.status).toBe(400);
+    const json = await update.json();
+    expect(json.code).toBe('SETTINGS_VALIDATION_FAILED');
+    expect(json.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ key: 'HEARTBEAT_ACTIVE', code: 'SETTINGS_INVALID_BOOLEAN' }),
+      ])
+    );
+  });
+
+  it('sanitizes invalid stored values back to safe defaults on read', async () => {
+    fs.writeFileSync(
+      overlayEnvPath,
+      [
+        'HEARTBEAT_CRON="not-a-cron"',
+        'HEARTBEAT_ACTIVE="sometimes"',
+        'OAX_MODEL=""',
+        '',
+      ].join('\n')
+    );
+
+    vi.resetModules();
+    const route = await import('../../app/api/settings/route');
+
+    const response = await route.GET();
+    const json = await response.json();
+
+    expect(json.settings.HEARTBEAT_CRON).toBe('0 * * * *');
+    expect(json.settings.HEARTBEAT_ACTIVE).toBe('true');
+    expect(json.settings.OAX_MODEL).toBe('llama3');
+    expect(json.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ key: 'HEARTBEAT_CRON', code: 'SETTINGS_INVALID_CRON' }),
+        expect.objectContaining({ key: 'HEARTBEAT_ACTIVE', code: 'SETTINGS_INVALID_BOOLEAN' }),
+        expect.objectContaining({ key: 'OAX_MODEL', code: 'SETTINGS_INVALID_MODEL' }),
+      ])
+    );
   });
 });

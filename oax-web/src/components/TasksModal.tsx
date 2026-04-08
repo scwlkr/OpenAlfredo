@@ -23,6 +23,7 @@ export default function TasksModal({ surfaceCard, onClose }: TasksModalProps) {
   const [newTaskText, setNewTaskText] = useState('');
   const [newTaskWhen, setNewTaskWhen] = useState('');
   const [newTaskRecur, setNewTaskRecur] = useState('');
+  const [now, setNow] = useState(() => Date.now());
 
   const fetchTasks = async () => {
     try {
@@ -32,7 +33,32 @@ export default function TasksModal({ surfaceCard, onClose }: TasksModalProps) {
     } catch {}
   };
 
-  useEffect(() => { fetchTasks(); }, []);
+  useEffect(() => {
+    let isMounted = true;
+
+    authFetch('/api/tasks')
+      .then(res => res.json())
+      .then(data => {
+        if (isMounted) {
+          setTasks(data.tasks || []);
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setNow(Date.now());
+    }, 60_000);
+
+    return () => {
+      window.clearInterval(interval);
+    };
+  }, []);
 
   const toggleTask = async (raw: string, done: boolean) => {
     await authFetch('/api/tasks', {
@@ -110,7 +136,7 @@ export default function TasksModal({ surfaceCard, onClose }: TasksModalProps) {
           ) : visible.map((t, i) => {
             const isScheduled = !!(t.whenISO || t.recur);
             const fireTime = t.whenISO ? new Date(t.whenISO) : null;
-            const overdue = fireTime && !t.done && fireTime.getTime() < Date.now();
+            const overdue = fireTime && !t.done && fireTime.getTime() < now;
             return (
               <div
                 key={i}

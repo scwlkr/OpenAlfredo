@@ -13,9 +13,8 @@ import fs from 'fs';
 import path from 'path';
 import { prisma } from './db';
 import { readAmbition, writeAmbition, AMBITION_PATH } from './ambition';
-import { DEFAULT_SOUL_PATH, RESTLESS_LOG_PATH, WORKSPACE_DIR, THEMES_FILE } from './paths';
+import { DEFAULT_SOUL_PATH, RESTLESS_LOG_PATH, WORKSPACE_DIR } from './paths';
 import { logInfo, logError } from './logger';
-import { defaultOaxModel } from './runtime-settings';
 
 const HEARTBEAT_LOG_START = '<!-- heartbeat-log-start -->';
 const HEARTBEAT_LOG_END = '<!-- heartbeat-log-end -->';
@@ -66,11 +65,10 @@ export interface ReflectionInput {
   transcripts: string[];
   reflections: string[];
   workspaceFiles: string[];
-  activeThemes?: string[];
 }
 
 export function buildReflectionPrompt(input: ReflectionInput): string {
-  const { soul, transcripts, reflections, workspaceFiles, activeThemes = [] } = input;
+  const { soul, transcripts, reflections, workspaceFiles } = input;
 
   return `You are a reflective agent generating a personal morning brief for your user.
 
@@ -82,9 +80,6 @@ ${transcripts.length > 0 ? transcripts.join('\n---\n') : '(no recent conversatio
 
 YOUR RECENT REFLECTIONS (from heartbeat ticks):
 ${reflections.length > 0 ? reflections.join('\n') : '(no recent reflections)'}
-
-ACTIVE THEMES (from continuity loop — the user's evolving interests):
-${activeThemes.length > 0 ? activeThemes.map((t) => `- ${t}`).join('\n') : '(no tracked themes yet)'}
 
 WORKSPACE ACTIVITY (files modified in the last 7 days):
 ${workspaceFiles.length > 0 ? workspaceFiles.map((f) => `- ${f}`).join('\n') : '(no recent workspace activity)'}
@@ -123,19 +118,7 @@ export async function gatherReflectionInput(): Promise<ReflectionInput> {
   const reflections = getRecentReflections(10);
   const workspaceFiles = getRecentWorkspaceFiles(7);
 
-  // Active themes from the continuity loop
-  let activeThemes: string[] = [];
-  try {
-    if (fs.existsSync(THEMES_FILE)) {
-      const data = JSON.parse(fs.readFileSync(THEMES_FILE, 'utf-8'));
-      activeThemes = (data.themes || [])
-        .filter((t: any) => t.strength >= 0.3)
-        .sort((a: any, b: any) => b.strength - a.strength)
-        .map((t: any) => t.tag);
-    }
-  } catch {}
-
-  return { soul, transcripts, reflections, workspaceFiles, activeThemes };
+  return { soul, transcripts, reflections, workspaceFiles };
 }
 
 // Generate a new reflection and write it to AMBITION.md.
@@ -153,7 +136,7 @@ export async function generateReflection(
     // Default: use Ollama directly
     const ollama = (await import('ollama')).default;
     const response = await ollama.generate({
-      model: defaultOaxModel(),
+      model: process.env.OAX_MODEL || 'llama3',
       prompt,
     });
     reflection = response.response;

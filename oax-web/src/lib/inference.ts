@@ -10,6 +10,7 @@ import path from 'path';
 import { prisma } from './db';
 import { THEMES_FILE, DEFAULT_SOUL_PATH } from './paths';
 import { logInfo } from './logger';
+import { defaultOaxModel } from './runtime-settings';
 
 // ---------------------------------------------------------------------------
 // Theme persistence
@@ -108,7 +109,7 @@ export async function extractThemes(
   } else {
     const ollama = (await import('ollama')).default;
     const response = await ollama.generate({
-      model: process.env.OAX_MODEL || 'llama3',
+      model: defaultOaxModel(),
       prompt,
     });
     raw = response.response;
@@ -192,7 +193,7 @@ export async function inferFollowUps(
   } else {
     const ollama = (await import('ollama')).default;
     const response = await ollama.generate({
-      model: process.env.OAX_MODEL || 'llama3',
+      model: defaultOaxModel(),
       prompt,
     });
     raw = response.response;

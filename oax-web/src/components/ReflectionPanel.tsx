@@ -14,16 +14,27 @@ export default function ReflectionPanel({ surfaceCard, onClose }: ReflectionPane
   const [loading, setLoading] = useState(true);
   const [regenerating, setRegenerating] = useState(false);
 
-  const fetchReflection = async () => {
-    try {
-      const res = await authFetch('/api/ambition');
-      const data = await res.json();
-      setReflection(data.reflection || '');
-    } catch {}
-    setLoading(false);
-  };
+  useEffect(() => {
+    let isMounted = true;
 
-  useEffect(() => { fetchReflection(); }, []);
+    authFetch('/api/ambition')
+      .then(res => res.json())
+      .then(data => {
+        if (isMounted) {
+          setReflection(data.reflection || '');
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (isMounted) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const regenerate = async () => {
     setRegenerating(true);
@@ -71,7 +82,7 @@ export default function ReflectionPanel({ surfaceCard, onClose }: ReflectionPane
               <Sparkles className="h-10 w-10 text-[var(--oax-brass)] opacity-50" />
               <p className="text-[var(--oax-muted)]">No reflection generated yet.</p>
               <p className="text-xs text-[var(--oax-muted)]">
-                Click "Regenerate" to create one now, or it will be generated automatically at the scheduled time.
+                Use Regenerate to create one now, or it will be generated automatically at the scheduled time.
               </p>
             </div>
           )}

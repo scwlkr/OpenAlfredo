@@ -38,9 +38,26 @@ export default function WorkspacePanel({ surfaceCard, onClose }: WorkspacePanelP
   };
 
   useEffect(() => {
-    setSelectedFile(null);
-    fetchFiles(tab);
+    let isMounted = true;
+
+    authFetch(`/api/workspace?subdir=${tab}`)
+      .then(res => res.json())
+      .then(data => {
+        if (isMounted) {
+          setFiles(data.files || []);
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      isMounted = false;
+    };
   }, [tab]);
+
+  const handleTabChange = (nextTab: Tab) => {
+    setSelectedFile(null);
+    setTab(nextTab);
+  };
 
   const openFile = async (name: string) => {
     try {
@@ -104,7 +121,7 @@ export default function WorkspacePanel({ surfaceCard, onClose }: WorkspacePanelP
               {tabs.map(t => (
                 <button
                   key={t.key}
-                  onClick={() => setTab(t.key)}
+                  onClick={() => handleTabChange(t.key)}
                   className={`rounded-xl px-3 py-1 ${tab === t.key ? 'bg-[var(--oax-basil)] text-white' : 'text-[var(--oax-muted)]'}`}
                 >{t.label}</button>
               ))}

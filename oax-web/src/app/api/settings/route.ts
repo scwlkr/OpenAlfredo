@@ -3,18 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { logInfo, logError } from '@/lib/logger';
 import { RUNTIME_ENV_PATH as ENV_PATH } from '@/lib/paths';
-
-// Settings we allow reading/writing through the API.
-const ALLOWED_KEYS = new Set([
-  'HEARTBEAT_CRON',
-  'HEARTBEAT_ACTIVE',
-  'AMBITION_CRON',
-  'REFLECTION_CRON',
-  'REFLECTION_ACTIVE',
-  'CONTINUITY_CRON',
-  'CONTINUITY_ACTIVE',
-  'OAX_MODEL',
-]);
+import { sanitizeRuntimeSettings, validateRuntimeSettingsPatch } from '@/lib/runtime-settings';
 
 function parseEnvFile(): Record<string, string> {
   try {
@@ -65,11 +54,8 @@ function writeEnvFile(values: Record<string, string>): void {
 export async function GET() {
   try {
     const env = parseEnvFile();
-    const settings: Record<string, string> = {};
-    for (const key of ALLOWED_KEYS) {
-      if (env[key] !== undefined) settings[key] = env[key];
-    }
-    return NextResponse.json({ settings });
+    const { settings, issues } = sanitizeRuntimeSettings(env);
+    return NextResponse.json({ settings, issues });
   } catch (err: any) {
     logError('settings_read_failed', { error: err.message });
     return NextResponse.json(
@@ -83,19 +69,24 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const { settings } = await request.json();
-    if (!settings || typeof settings !== 'object') {
+    if (!settings || typeof settings !== 'object' || Array.isArray(settings)) {
       return NextResponse.json(
         { error: 'Missing settings object', code: 'SETTINGS_MISSING' },
         { status: 400 }
       );
     }
 
-    // Filter to only allowed keys
-    const updates: Record<string, string> = {};
-    for (const [key, value] of Object.entries(settings)) {
-      if (ALLOWED_KEYS.has(key) && typeof value === 'string') {
-        updates[key] = value;
-      }
+    const { updates, issues } = validateRuntimeSettingsPatch(settings);
+
+    if (issues.length > 0) {
+      return NextResponse.json(
+        {
+          error: 'One or more settings are invalid.',
+          code: 'SETTINGS_VALIDATION_FAILED',
+          issues,
+        },
+        { status: 400 }
+      );
     }
 
     if (Object.keys(updates).length === 0) {
