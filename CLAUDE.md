@@ -13,14 +13,14 @@ Use the new naming system consistently:
 
 ## Project Overview
 
-OpenAlfredo (OAX) is a local-first prototype for replacing prompt-engineering with ongoing conversation with a persistent agent. It runs against a local Ollama instance and ships a web UI plus an optional Telegram daemon that share one brain. See `OAX_MVP_PLAN.md` for the design intent.
+OpenAlfredo (OAX) is a local-first prototype for replacing prompt-engineering with ongoing conversation with a persistent agent. It runs against a local Ollama instance and ships a web UI plus an optional Telegram daemon that share one brain. Start with `docs/README.md` and `docs/architecture.md` for the current design.
 
 ## Repository Layout
 
 This is a two-package repo. Do not conflate them:
 
 - `/` (root) — `oax` CLI wrapper (CommonJS, yargs) that orchestrates the whole stack. See `bin/oax.js`.
-- `/oax-web` — the actual application: Next.js 14 App Router + Prisma/SQLite + Ollama. **All real work happens here.** When running npm scripts, assume cwd is `oax-web/` unless stated otherwise.
+- `/oax-web` — the actual application: Next.js 16 App Router + Prisma/SQLite + Ollama. **All real work happens here.** When running npm scripts, assume cwd is `oax-web/` unless stated otherwise.
 
 ## Common Commands
 
@@ -30,7 +30,7 @@ All of these run from `oax-web/`:
 npm run dev      # Next.js dev server on :3000
 npm run build    # next build
 npm run start    # next start (after build)
-npm run lint     # next lint (eslint-config-next)
+npm run lint     # eslint .
 npx vitest       # run all tests (vitest, node environment)
 npx vitest run src/lib/memory-retrieval.test.ts   # single test file
 npx prisma db push           # sync schema to SQLite
@@ -140,7 +140,7 @@ The agent can read and mutate its own source via three markers in its replies. S
 | `[[EDIT_FILE: path]]\n<old>…</old>\n<new>…</new>\n[[/EDIT_FILE]]` | block, old must match exactly once | `applySelfEdit` |
 | `[[WRITE_FILE: path]]\n…\n[[/WRITE_FILE]]` | block, full overwrite | `applySelfEdit` |
 
-`buildSystemPrompt` injects a compact repo file index (via `buildCodeIndex()`) so the model knows what files exist without needing to READ first. On the **Telegram path** (`processChatSync`), if the model emits `READ_FILE` in turn 1, `resolveReadMarkers` satisfies them in-process and a second `generateText` call produces the real answer. On the **web streaming path** (`processChat`), there's no reflex loop — READ markers appear stripped in the reply, and the user re-prompts. Applied edits are logged via `logInfo('self_edit_applied' | 'self_edit_failed', …)` and summarized in the visible reply with a restart reminder. Test prompts live in `docs/SELF_MOD_TEST_PROMPTS.md`.
+`buildSystemPrompt` injects a compact repo file index (via `buildCodeIndex()`) so the model knows what files exist without needing to READ first. On the **Telegram path** (`processChatSync`), if the model emits `READ_FILE` in turn 1, `resolveReadMarkers` satisfies them in-process and a second `generateText` call produces the real answer. On the **web streaming path** (`processChat`), there's no reflex loop — READ markers appear stripped in the reply, and the user re-prompts. Applied edits are logged via `logInfo('self_edit_applied' | 'self_edit_failed', …)` and summarized in the visible reply with a restart reminder. Test prompts live in `docs/self-modification.md`.
 
 ### Prisma / database
 

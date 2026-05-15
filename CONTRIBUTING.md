@@ -1,118 +1,93 @@
 # Contributing to OpenAlfredo
 
-Thanks for your interest in OAX. This is a local-first prototype, so the
-contribution model stays simple: small, focused PRs with tests and docs.
+OpenAlfredo is a local-first prototype. Keep contributions small, focused, tested, and documented.
 
-## Dev setup
+## Setup
 
 ```bash
-# Prerequisites: Node 20+, Ollama running locally
 git clone https://github.com/scwlkr/OpenAlfredo.git
 cd OpenAlfredo
-npm install                  # runs bootstrap automatically
-cd oax-web && npm install
-cd ..
-oax pod                      # → http://localhost:3000
+npm install
+cd oax-web && npm install && cd ..
+node bin/bootstrap.js
+node bin/oax.js pod
 ```
 
-The `postinstall` bootstrap copies `examples/SOUL.example.md` and
-friends into `oax-web/data/`, generates a local API key, and runs
-`prisma db push`. Re-run it any time with `node bin/bootstrap.js`
-(idempotent) or `node bin/bootstrap.js --force` to reset.
+Open `http://localhost:3000`.
 
-## Running tests
+Run `npm link` from the repo root only if you want to use `oax` instead of `node bin/oax.js`.
+
+## Tests and checks
 
 ```bash
 cd oax-web
-npx vitest              # all tests, watch mode
-npx vitest run          # one-shot
-npx vitest run src/lib/__tests__/ambition.test.ts   # single file
+npm test
+npm run lint
+npm run build
 ```
 
-Tests don't require Ollama — the provider is mocked.
-
-## Linting
+Root shortcut:
 
 ```bash
-cd oax-web && npm run lint
+npm test
 ```
 
-## Regenerating the Prisma client
+Tests mock model and Telegram behavior unless a test explicitly documents otherwise.
 
-After schema edits:
+## Database
+
+After schema changes, use the repo-owned scripts:
 
 ```bash
 cd oax-web
-npx prisma generate
-npx prisma db push
+npm run db:generate
+npm run db:push
 ```
+
+Do not rely on raw Prisma commands unless you pass an explicit absolute `DATABASE_URL`.
 
 ## Branch naming
 
-- `feat/<scope>-<short-desc>` — new feature
-- `fix/<scope>-<short-desc>` — bug fix
-- `refactor/<scope>-<short-desc>` — code health
-- `docs/<short-desc>` — docs only
+- `feat/<scope>-<short-desc>` for features.
+- `fix/<scope>-<short-desc>` for bug fixes.
+- `refactor/<scope>-<short-desc>` for code health.
+- `docs/<short-desc>` for documentation-only changes.
 
 ## Commit messages
 
-Conventional commits:
+Use conventional commits:
 
-```
-feat: add [[EMAIL: …]] marker
-fix: correct path traversal check in workspace.ts
-refactor: centralize mutable-state paths (spec §3.1)
+```text
+feat: add [[EMAIL]] marker
+fix: correct workspace path traversal check
+refactor: centralize mutable-state paths
 docs: document heartbeat log rotation
 ```
 
-## Pull requests
+## Pull request checklist
 
 Before opening a PR:
 
-- [ ] Tests pass (`npx vitest run`)
-- [ ] Lint clean (`npm run lint`)
-- [ ] Docs updated if behavior changed
-- [ ] No new owner-private paths (use `src/lib/paths.ts`)
-- [ ] No `[[SELF_MOD]]` artifacts accidentally committed
-- [ ] No secrets in commits (`.env`, `.oax-api-key`, etc.)
+- [ ] Tests pass.
+- [ ] Lint passes.
+- [ ] Build passes when behavior or package boundaries changed.
+- [ ] Docs are updated when behavior changed.
+- [ ] Runtime paths use `oax-web/src/lib/paths.ts`.
+- [ ] No `.env`, API keys, databases, logs, or private runtime state are committed.
+- [ ] No accidental self-edit artifacts are committed.
 
-The PR template walks through this.
+## Extension points
 
-## Proposing a new marker
+Add a marker by writing a parser/handler under `oax-web/src/lib/`, importing it in `oax-web/src/lib/oax-engine.ts`, documenting it in the system prompt, adding tests, and updating [Architecture](docs/architecture.md).
 
-Markers are OAX's extension point. To add one:
+Add a memory layer by extending `MemorySlice.source`, adding retrieval in `retrieveContext()`, logging with `logInfo('context_retrieved', ...)`, and testing hit, miss, and error paths.
 
-1. Pick a name. Use `[[UPPERCASE: …]]` for single-line markers or
-   `[[UPPERCASE: …]]…[[/UPPERCASE]]` for blocks.
-2. Write the parser + handler in a new `src/lib/<marker>.ts`.
-3. Import in `src/lib/oax-engine.ts::handleMarkers()` — parse,
-   side-effect, strip.
-4. Document the marker in `buildSystemPrompt()` so the model knows how
-   to emit it.
-5. Add tests: parser (happy path + malformed), handler (side-effect +
-   idempotency), engine integration (cleaned reply shape).
-6. Document in `docs/ARCHITECTURE.md` under "Extension points".
+## Documentation
 
-## Proposing a new memory layer
+Use [docs/README.md](docs/README.md) as the documentation map, [docs/glossary.md](docs/glossary.md) for terminology, and [docs/style-guide.md](docs/style-guide.md) for documentation rules.
 
-1. Extend `MemorySlice.source` union in `src/lib/memory-retrieval.ts`.
-2. Add the retrieval call inside `retrieveContext()`.
-3. Log via `logInfo('context_retrieved', …)`.
-4. Test: retrieval hit path, miss path, error path.
+## Community and security
 
-## Code style
+Be kind. See [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
 
-- TypeScript strict.
-- Comments explain _why_, not _what_.
-- Prefer named exports.
-- Paths go through `src/lib/paths.ts`, not `process.cwd()` string joins.
-- Keep runtime surface small — no new deps without discussion.
-
-## Community
-
-Be kind. See [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md).
-
-## Questions
-
-Open a discussion or an issue. Security issues go private — see
-[docs/SECURITY.md](./docs/SECURITY.md).
+Report security issues privately; see [docs/security.md](docs/security.md).

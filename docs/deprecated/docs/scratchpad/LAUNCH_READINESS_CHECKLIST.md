@@ -1,3 +1,7 @@
+> Deprecated: This checklist is a dated launch-readiness snapshot and contains items that have drifted from current source state.
+> Replacement: docs/README.md, docs/operations.md, docs/testing.md, docs/security.md
+> Original path: docs/scratchpad/LAUNCH_READINESS_CHECKLIST.md
+
 # OpenAlfredo Launch Readiness Checklist
 
 > Reviewed 2026-04-08 against the current repo state.

@@ -1,3 +1,7 @@
+> Deprecated: This planning artifact was moved out of the active docs set because current product facts now live in the user-manual docs.
+> Replacement: docs/architecture.md, docs/glossary.md, docs/README.md
+> Original path: docs/OAX_MVP_PLAN.md
+
 OAX MVP (Minimum Viable Product) Plan
 
 Purpose

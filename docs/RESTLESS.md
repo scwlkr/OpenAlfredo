@@ -1,50 +1,55 @@
-# RESTLESS — Heartbeat Protocol
+# RESTLESS
 
-This is the agent's heartbeat. Between user messages, the agent is not idle
-— it is *restless*. On every heartbeat tick the agent wakes, reviews its
-SOUL, AMBITION, and recent heartbeat log, and decides whether to act,
-reflect, or wait.
+RESTLESS is OpenAlfredo's heartbeat protocol. Between user messages, the daemon can wake the agent, review current state, and decide whether to notify, add a task, reflect, or rest.
 
-> Death is not the end of the conversation. The agent persists — and so
-> does its attention.
+The protocol doc intentionally keeps the uppercase filename because `bin/profile-state.js` points generated heartbeat logs to `docs/RESTLESS.md`, and the name mirrors the runtime file `RESTLESS.log.md`.
 
----
+## Configuration
 
-## Config
+Default settings:
 
-- **Interval (cron):** `0 * * * *` (every hour, on the hour)
-- **Max log entries retained:** 50 (older ticks are trimmed)
-- **Active:** true
+```bash
+HEARTBEAT_CRON="0 * * * *"
+HEARTBEAT_ACTIVE=true
+```
 
-Tune the cadence with `HEARTBEAT_CRON` in `oax-web/.env` (any valid
-node-cron expression). To disable the heartbeat entirely, set
-`HEARTBEAT_ACTIVE=false`.
+The heartbeat log lives at `oax-web/data/RESTLESS.log.md`.
 
-The heartbeat log lives at `oax-web/data/RESTLESS.log.md` (gitignored).
+## Inputs
 
-## Protocol
+Each tick reads:
 
-When the agent wakes, it is given SOUL, AMBITION, TASKS, and the last 10 log
-entries. It emits one or more of these tokens, which the daemon parses:
+- the default SOUL at `oax-web/data/agents/default/SOUL.md`;
+- current `oax-web/data/AMBITION.md`;
+- current `oax-web/data/TASKS.md`;
+- recent heartbeat log entries;
+- active themes from the continuity loop when available.
+
+## Tokens
+
+The model emits one or more tokens:
 
 | Token | Effect |
 |---|---|
-| `[[NOTIFY: <message>]]` | Sends `<message>` to the most recent Telegram chat. |
-| `[[TASK: <task>]]` | Appends a new task to `TASKS.md`. |
-| `[[REFLECT: <thought>]]` | Records a thought to the heartbeat log. No user-visible output. |
-| `[[REST]]` | No action this tick. The agent is at rest. |
+| `[[NOTIFY: <message>]]` | Sends `<message>` to the paired Telegram chat when available. |
+| `[[TASK: <task>]]` | Appends a task to `oax-web/data/TASKS.md`. |
+| `[[REFLECT: <thought>]]` | Adds a thought to `oax-web/data/RESTLESS.log.md`. |
+| `[[REST]]` | Records that no action was needed. |
 
-Multiple tokens per tick are allowed. If no token is emitted, the tick is
-recorded as `REST`.
+If no token is emitted, the daemon treats the tick as rest.
 
 ## Log format
 
-Each entry in the log is a single markdown bullet:
+Heartbeat entries are Markdown bullets:
 
-```
-- YYYY-MM-DDTHH:mm:ssZ — <ACTION> — <summary>
+```text
+- YYYY-MM-DDTHH:mm:ssZ - ACTION - summary
 ```
 
-Entries live between the `<!-- heartbeat-log-start -->` and
-`<!-- heartbeat-log-end -->` markers inside
-`oax-web/data/RESTLESS.log.md`, capped at 50.
+Entries live between the `<!-- heartbeat-log-start -->` and `<!-- heartbeat-log-end -->` markers and are capped at the most recent 50 entries.
+
+## Related docs
+
+- [Operations](operations.md) for daemon lifecycle.
+- [Continuity loop](continuity-loop.md) for theme-based follow-up.
+- [Telegram](telegram.md) for proactive notifications.
